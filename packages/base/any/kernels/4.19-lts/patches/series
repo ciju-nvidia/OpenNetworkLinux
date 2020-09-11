@@ -43,4 +43,7 @@ driver-hwmon-max6620.patch
 0041-hwmon-pmbus-Add-support-for-MPS-Multi-phase-mp2975-c.patch
 0042-platform-mellanox-mlx-platform-Standalone-line-card-.patch
 0043-platform-mellanox-Fixes-to-be-merge-to-previous-patc.patch
-0044-platform-mellanox-mlx-platform-Standalone-line-card-.patch
+0045-i2c-mux-mlxcpld-Convert-driver-to-platform-driver.patch
+0046-platform-mellanox-Fixes-to-be-merge-to-previous-patc.patch
+0047-platform-mellanox-mlxreg-hotplug-Bringup-bug-fix.patch
+0048-platform-mellanox-mlxreg-lc-Modify-initialization.patch
