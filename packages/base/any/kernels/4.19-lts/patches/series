@@ -47,3 +47,7 @@ driver-hwmon-max6620.patch
 0046-platform-mellanox-Fixes-to-be-merge-to-previous-patc.patch
 0047-platform-mellanox-mlxreg-hotplug-Bringup-bug-fix.patch
 0048-platform-mellanox-mlxreg-lc-Modify-initialization.patch
+0049-platform-mellanox-Fixes-to-be-merge-to-previous-patc.patch
+0050-i2c-mux-mlxcpld-Fixes-during-bring-up.patch
+0051-Add-support-for-I2C-bus-frequency-settin.patch
+0052-platform-mellanox-mlxreg-lc-Modify-initialization.patch
