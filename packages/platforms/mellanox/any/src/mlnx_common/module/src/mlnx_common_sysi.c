@@ -389,7 +389,7 @@ onlp_sysi_platform_manage_leds_type3(void)
     int fan_number, fan_sub, fan_idx, psu_number;
     onlp_led_mode_t mode, system_mode;
     int min_fan_speed;
-    int fan_led_id[6] = { LED_FAN1, LED_FAN2, LED_FAN3, LED_FAN4, LED_FAN5, LED_FAN6 };
+    int fan_led_id[7] = { LED_FAN1, LED_FAN2, LED_FAN3, LED_FAN4, LED_FAN5, LED_FAN6, LED_FAN7  };
     int fan_problem = 0;
     int psu_problem = 0;
     /*

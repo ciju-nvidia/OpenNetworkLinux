@@ -25,16 +25,17 @@
 #ifndef __PLATFORM_LIB_H__
 #define __PLATFORM_LIB_H__
 
-#include "x86_64_mlnx_msn3510_log.h"
+#include "x86_64_mlnx_mqm9700_log.h"
 
 #define CHASSIS_PSU_COUNT           2
 #define CPLD_COUNT                  3
-#define SFP_PORT_COUNT              54
+#define SFP_PORT_COUNT              64
 
-#define CHASSIS_TOTAL_FAN_COUNT     14
-#define CHASSIS_TOTAL_THERMAL_COUNT 12
+#define CHASSIS_TOTAL_FAN_COUNT     18
+#define CHASSIS_TOTAL_THERMAL_COUNT 10
 #define CHASSIS_FAN_COUNT     (CHASSIS_TOTAL_FAN_COUNT - CHASSIS_PSU_COUNT)
 #define CHASSIS_THERMAL_COUNT (CHASSIS_TOTAL_THERMAL_COUNT - CHASSIS_PSU_COUNT)
-#define CHASSIS_LED_COUNT           8
+#define CHASSIS_LED_COUNT           9
+
 
 #endif  /* __PLATFORM_LIB_H__ */
