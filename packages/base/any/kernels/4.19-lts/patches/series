@@ -28,6 +28,14 @@ driver-hwmon-max6620.patch
 0025-watchdog-mlx-wdt-support-new-watchdog-type-with-long.patch
 0026-mlxsw-core-thermal-Enable-thermal-zones-by-default.patch
 0027-platform-x86-mlx-platform-Remove-PSU-EEPROM-configur.patch
+0028-thermal-Fix-deadlock-in-thermal-thermal_zone_device_.patch
+0029-mlxsw-core-Fix-memory-leak-on-module-removal.patch
+0029-mlxsw-reg-Extend-MCIA-register-with-new-field-exposi.patch
+0030-mlxsw-core-Add-ethtool-support-for-QSFP-DD-transceiv.patch
+0030-mlxsw-core-hwmon-Align-with-upstream-code.patch
+0030-mlxsw-core-thermal-Align-with-upstream-code.patch
+0030-platform-x86-mlx-platform-Remove-PSU-EEPROM-configur.patch
+0031-platform-x86-mlx-platform-Remove-PSU-EEPROM-configur.patch
 0030-leds-mlxreg-Allow-multi-instantiation-of-same-name-L.patch
 0031-hwmon-mlxreg-fan-Add-support-for-fan-drawers-capabil.patch
 0031-i2c-mux-mlxcpld-Extend-driver-functionality-and-upda.patch
