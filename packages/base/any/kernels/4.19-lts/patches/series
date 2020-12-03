@@ -32,6 +32,7 @@ driver-hwmon-max6620.patch
 0029-mlxsw-core-Fix-memory-leak-on-module-removal.patch
 0029-mlxsw-reg-Extend-MCIA-register-with-new-field-exposi.patch
 0030-mlxsw-core-Add-ethtool-support-for-QSFP-DD-transceiv.patch
+0030-mlxsw-reg-Align-with-upstream-code.patch
 0030-mlxsw-core-hwmon-Align-with-upstream-code.patch
 0030-mlxsw-core-thermal-Align-with-upstream-code.patch
 0030-platform-x86-mlx-platform-Remove-PSU-EEPROM-configur.patch
