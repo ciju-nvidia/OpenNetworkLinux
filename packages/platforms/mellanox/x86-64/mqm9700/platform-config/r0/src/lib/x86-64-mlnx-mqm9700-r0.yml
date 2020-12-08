@@ -2,11 +2,11 @@
 
 ######################################################################
 #
-# platform-config for Mellanox 8200 
+# platform-config for Mellanox mqm9700
 #
 ######################################################################
 
-x86-64-mlnx-mtq8200-r0:
+x86-64-mlnx-mqm9700-r0:
 
   grub:
 
@@ -18,7 +18,7 @@ x86-64-mlnx-mtq8200-r0:
       --stop=1
 
     kernel:
-      <<: *kernel-4-9
+      <<: *kernel-4-19
 
     args: >-
       nopat
