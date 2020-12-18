@@ -35,3 +35,4 @@ driver-hwmon-max6620.patch
 0032-hwmon-pmbus-Add-support-for-MPS-Multi-phase-mp2975-c.patch
 0033-hwmon-Add-convience-macro-to-define-simple-static-se.patch
 0034-backport-nvme-Add-hardware-monitoring-support.patch
+0035-platform-x86-mlx-platform-Extend-FAN-and-LED-config-.patch
