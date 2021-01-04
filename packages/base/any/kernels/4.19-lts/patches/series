@@ -36,3 +36,5 @@ driver-hwmon-max6620.patch
 0033-hwmon-Add-convience-macro-to-define-simple-static-se.patch
 0034-backport-nvme-Add-hardware-monitoring-support.patch
 0035-platform-x86-mlx-platform-Extend-FAN-and-LED-config-.patch
+0036-mlxsw-core-Increase-critical-threshold-for-ASIC-ther.patch
+0037-hwmon-pmbus-Add-support-for-MPS-Multi-phase-mp2888-c.patch
