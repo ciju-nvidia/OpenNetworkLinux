@@ -32,4 +32,7 @@ driver-hwmon-max6620.patch
 0029-mlxsw-core-Fix-memory-leak-on-module-removal.patch
 0030-platform-x86-mlx-platform-Remove-PSU-EEPROM-configur.patch
 0031-platform-x86-mlx-platform-Remove-PSU-EEPROM-configur.patch
-
+0032-hwmon-pmbus-Add-support-for-MPS-Multi-phase-mp2975-c.patch
+0033-hwmon-Add-convience-macro-to-define-simple-static-se.patch
+0034-backport-nvme-Add-hardware-monitoring-support.patch
+0035-platform-x86-mlx-platform-Extend-FAN-and-LED-config-.patch
