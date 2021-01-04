@@ -67,3 +67,5 @@ driver-add-the-support-max6620.patch
 0064-platform-x86-mlx-platform-Remove-PSU-EEPROM-configur.patch
 0065-hwmon-pmbus-Add-support-for-MPS-Multi-phase-mp2975-c.patch
 0066-platform-x86-mlx-platform-Extend-FAN-and-LED-config-.patch
+0067-mlxsw-core-Increase-critical-threshold-for-ASIC-ther.patch
+0068-hwmon-pmbus-Add-support-for-MPS-Multi-phase-mp2888-c.patch
