@@ -39,3 +39,4 @@ driver-hwmon-max6620.patch
 0036-mlxsw-core-Increase-critical-threshold-for-ASIC-ther.patch
 0037-hwmon-pmbus-Add-support-for-MPS-Multi-phase-mp2888-c.patch
 0038-mlxsw-core-Add-validation-of-transceiver-temperature.patch
+pinctrl-intel-backport-gpio-enable.patch
