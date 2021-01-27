@@ -67,3 +67,7 @@ driver-hwmon-max6620.patch
 0058-i2c-mux-mlxcpld-Update-after-upstream-review.patch
 0059-leds-mlxreg-Update-after-upstream-review.patch
 0060-mlxsw-core-Introduce-initial-chassis-management-supp.patch
+0061-mlxsw-core-thermal-Fix-compilation-warning.patch
+0062-i2c-mlxcpld-Fixes-after-upstream-review.patch
+0063-platform-mlx-Fixes-after-upstream-review.patch
+0064-i2c-mux-mlxcpld-Fixes-after-upstream-review.patch
