@@ -71,3 +71,4 @@ driver-hwmon-max6620.patch
 0062-i2c-mlxcpld-Fixes-after-upstream-review.patch
 0063-platform-mlx-Fixes-after-upstream-review.patch
 0064-i2c-mux-mlxcpld-Fixes-after-upstream-review.patch
+0065-disable-MLXPLAT_CPLD_CH3-segment.patch
