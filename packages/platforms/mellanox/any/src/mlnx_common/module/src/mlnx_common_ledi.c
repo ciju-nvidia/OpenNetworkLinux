@@ -131,6 +131,15 @@ led_light_mode_map_t led_map[] = {
     {LED_FAN6, LED_MODE_GREEN_BLINK, ONLP_LED_MODE_GREEN_BLINKING},
     {LED_FAN6, LED_MODE_AUTO,        ONLP_LED_MODE_AUTO},
 
+	{LED_FAN7, LED_MODE_OFF,         ONLP_LED_MODE_OFF},
+    {LED_FAN7, LED_MODE_GREEN,       ONLP_LED_MODE_GREEN},
+    {LED_FAN7, LED_MODE_RED,         ONLP_LED_MODE_RED},
+    {LED_FAN7, LED_MODE_ORANGE,      ONLP_LED_MODE_ORANGE},
+    {LED_FAN7, LED_MODE_RED_BLINK,   ONLP_LED_MODE_RED_BLINKING},
+    {LED_FAN7, LED_MODE_ORANGE_BLINK, ONLP_LED_MODE_ORANGE_BLINKING},
+    {LED_FAN7, LED_MODE_GREEN_BLINK, ONLP_LED_MODE_GREEN_BLINKING},
+    {LED_FAN7, LED_MODE_AUTO,        ONLP_LED_MODE_AUTO},
+
     {LED_PSU, LED_MODE_OFF,         ONLP_LED_MODE_OFF},
     {LED_PSU, LED_MODE_GREEN,       ONLP_LED_MODE_GREEN},
     {LED_PSU, LED_MODE_RED,         ONLP_LED_MODE_RED},
@@ -195,6 +204,7 @@ static led_colors_t led_colors_map[] = {
     {LED_FAN4, "green"},
     {LED_FAN5, "green"},
     {LED_FAN6, "green"},
+	{LED_FAN7, "green"},
     {LED_PSU, "green"},
     {LED_FAN, "green"},
     {LED_PSU1, "green"},

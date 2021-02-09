@@ -44,7 +44,8 @@
 /*led type 3 id */
 #define LED_FAN5 6
 #define LED_FAN6 7
-#define LED_PSU_T3 8
+#define LED_FAN7 8
+#define LED_PSU_T3 9
 
 #define PERCENTAGE_MIN 60.0
 #define PERCENTAGE_MAX 100.0
@@ -185,6 +186,8 @@ int mc_get_platform_info(mlnx_platform_info_t* mlnx_platform);
 int onlp_fani_get_min_rpm(int id);
 
 int psu_fan_read_eeprom(int psu_index, onlp_fan_info_t* fan_info);
+
+int psu_fan_read_eeprom_vpd(int psu_index, onlp_fan_info_t* fan_info);
 
 int psu_read_eeprom(int psu_index, onlp_psu_info_t* psu_info);
 
