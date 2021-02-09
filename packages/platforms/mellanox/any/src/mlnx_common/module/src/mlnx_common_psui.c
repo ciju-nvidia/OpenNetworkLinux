@@ -92,7 +92,13 @@ static onlp_psu_info_t pinfo[] =
     },
     {
         { ONLP_PSU_ID_CREATE(PSU2_ID), "PSU-2", 0 },
-    }
+    },
+	{
+		{ ONLP_PSU_ID_CREATE(PSU3_ID), "PSU-3", 0 },
+	},
+	{
+		{ ONLP_PSU_ID_CREATE(PSU4_ID), "PSU-4", 0 },
+	}
 };
 
 static int

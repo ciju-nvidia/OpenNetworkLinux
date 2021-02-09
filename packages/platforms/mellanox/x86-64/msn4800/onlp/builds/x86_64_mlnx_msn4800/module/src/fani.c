@@ -36,16 +36,12 @@
 #define FAN_4_ON_MAIN_BOARD 4
 #define FAN_5_ON_MAIN_BOARD 5
 #define FAN_6_ON_MAIN_BOARD 6
-#define FAN_7_ON_MAIN_BOARD 7
-#define FAN_8_ON_MAIN_BOARD 8
-#define FAN_9_ON_MAIN_BOARD 9
-#define FAN_10_ON_MAIN_BOARD 10
-#define FAN_11_ON_MAIN_BOARD 11
-#define FAN_12_ON_MAIN_BOARD 12
-#define FAN_1_ON_PSU1       13
-#define FAN_1_ON_PSU2       14
+#define FAN_1_ON_PSU1       7
+#define FAN_1_ON_PSU2       8
+#define FAN_1_ON_PSU3       9
+#define FAN_1_ON_PSU4       10
 
-#define FIRST_PSU_FAN_ID 13
+#define FIRST_PSU_FAN_ID 7
 
 static int min_fan_speed[CHASSIS_FAN_COUNT+1] = {0};
 static int max_fan_speed[CHASSIS_FAN_COUNT+1] = {0};
@@ -59,14 +55,10 @@ static fan_path_T fan_path[] =  /* must map with onlp_fan_id */
     MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_4_ON_MAIN_BOARD),
     MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_5_ON_MAIN_BOARD),
     MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_6_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_7_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_8_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_9_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_10_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_11_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_12_ON_MAIN_BOARD),
     MAKE_FAN_PATH_ON_PSU(1 ,1),
-    MAKE_FAN_PATH_ON_PSU(2, 1)
+    MAKE_FAN_PATH_ON_PSU(2, 1),
+    MAKE_FAN_PATH_ON_PSU(3, 1),
+    MAKE_FAN_PATH_ON_PSU(4, 1)
 };
 
 /* Static fan information */
@@ -78,44 +70,10 @@ onlp_fan_info_t finfo[] = {
     MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(4),
     MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(5),
     MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(6),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(7),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(8),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(9),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(10),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(11),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(12),
     MAKE_FAN_INFO_NODE_ON_PSU(1,1),
-    MAKE_FAN_INFO_NODE_ON_PSU(2,1)
-};
-
-static fan_path_T fan_path_c[] =  /* must map with onlp_fan_id */
-{
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_RESERVED),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_1_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_2_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_3_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_4_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_5_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_6_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_7_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_MAIN_BOARD(PROJECT_NAME, FAN_8_ON_MAIN_BOARD),
-    MAKE_FAN_PATH_ON_PSU(1 ,1),
-    MAKE_FAN_PATH_ON_PSU(2, 1)
-};
-
-/* Static fan information */
-onlp_fan_info_t finfo_c[] = {
-    { }, /* Not used */
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(1),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(2),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(3),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(4),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(5),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(6),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(7),
-    MAKE_FAN_INFO_NODE_ON_MAIN_BOARD(8),
-    MAKE_FAN_INFO_NODE_ON_PSU(1,1),
-    MAKE_FAN_INFO_NODE_ON_PSU(2,1)
+    MAKE_FAN_INFO_NODE_ON_PSU(2,1),
+	MAKE_FAN_INFO_NODE_ON_PSU(3,1),
+	MAKE_FAN_INFO_NODE_ON_PSU(4,1)
 };
 
 
@@ -126,18 +84,13 @@ int
 onlp_fani_init(void)
 {
     mlnx_platform_info_t* mlnx_platform_info = get_platform_info();
-    if(!strcmp(mlnx_platform_info->onl_platform_name, "x86-64-mlnx_msn4800c-r0")) {
-    	mlnx_platform_info->finfo = finfo_c;
-    	mlnx_platform_info->fan_fnames = fan_path_c;
-    } else {
-    	mlnx_platform_info->finfo = finfo;
-    	mlnx_platform_info->fan_fnames = fan_path;
-    }
 
+    mlnx_platform_info->finfo = finfo;
+    mlnx_platform_info->fan_fnames = fan_path;
     mlnx_platform_info->min_fan_speed = min_fan_speed;
     mlnx_platform_info->max_fan_speed = max_fan_speed;
     mlnx_platform_info->fan_type = FAN_TYPE_NO_EEPROM;
-    mlnx_platform_info->fan_per_module = 2;
+    mlnx_platform_info->fan_per_module = 1;
     mlnx_platform_info->first_psu_fan_id = FIRST_PSU_FAN_ID;
     return ONLP_STATUS_OK;
 }
