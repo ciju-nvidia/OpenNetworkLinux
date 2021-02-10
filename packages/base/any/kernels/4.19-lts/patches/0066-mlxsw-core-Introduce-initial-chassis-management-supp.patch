@@ -1,11 +1,8 @@
-From 0a0bd3e06c4da09878cc070672dbd76c1e810c69 Mon Sep 17 00:00:00 2001
+From dca6f7d0106f7987754757ce395f9ccdd1416c13 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Thu, 3 Dec 2020 01:32:11 +0200
-Subject: [backport v4.19 7/7] mlxsw: core: Introduce initial chassis
+Date: Mon, 8 Feb 2021 13:09:29 +0200
+Subject: [PATCH backport 4.19 1/1] mlxsw: core: Introduce initial chassis
  management support for modular Ethernet system
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
 
 Add initial chassis management support for Nvidia modular Ethernet
 switch systems MSN4800, providing a high performance switching solution
@@ -42,270 +39,53 @@ The patchset provides initial support for system management. It extends
 functionality of thermal control, hardware monitoring, cable QSFP
 access, while all these objects are located within the line card.
 
-mlxsw: reg: Extend MTMP register with new slot number field
-
-Extend MTMP (Management Temperature Register) with new field specifying
-the slot number. The purpose of this field is to support access to MTMP
-register for reading temperature sensors on modular system.
-For '1U' systems the 'sensor_index' uniquely identifies the cage
-sensors, while 'slot_index' is always 0. For modular systems the
-sensors are identified by:
-- 'slot_index', specifying the slot number, where line card is located;
-- 'sensor_index', specifying cage sensor within the line card.
-
-mlxsw: reg: Extend MTBR register with new slot number field
-
-Extend MTBR (Management Temperature Bulk Register) with new field
-specifying the slot number. The purpose of this field is to support
-access to MTBR register for reading temperature sensors on modular
-system. For '1U' systems the 'sensor_index' uniquely identifies the
-cage sensors. For modular systems the sensors are identified by two
-indexes:
-- 'slot_index', specifying the slot number, where line card is located;
-- 'sensor_index', specifying cage sensor within the line card.
-
-mlxsw: reg: Extend MCIA register with new slot number field
-
-Extend MCIA (Management Cable Info Access Register) with new field
-specifying the slot number. The purpose of this field is to support
-access to MCIA register for reading cage cable information on modular
-system. For '1U' systems the 'module' number uniquely identifies the
-transceiver location. For modular systems the transceivers are
-identified by two indexes:
-- 'slot_index', specifying the slot number, where line card is located;
-- 'module', specifying cage transceiver within the line card.
-
-mlxsw: reg: Extend MGPIR register with new slot number field
-
-Extend MGPIR (Management General Peripheral Information Register) with
-new field specifying the slot number. The purpose of this field is to
-support access to MPGIR register on modular system for getting the
-number of cage, equipped on the line card, inserted at specified slot.
-In case slot number is set zero, MGPIR will provide the information for
-the main board. For Top of the Rack (non-modular) system it will
-provide the same as before.
-
-mlxsw: core_hwmon: Fix variable names for hwmon attributes
-
-Replace all local variables 'mlwsw_hwmon_attr' by 'mlxsw_hwmon_attr'.
-All variable prefixes should start with 'mlxsw' according to the naming
-convention, so 'mlwsw' is changed to 'mlxsw'.
-
-mlxsw: core_hwmon: Split gearbox initialization
-
-Split gearbox initialization in two routines - the first one is to be
-used for gearbox configuration validation, the second for creation of
-gearbox related 'hwmon' attributes if any.
-
-Currently, mlxsw supports gearbox hwmon attributes corresponding to the
-objects discovered on the main board. Same hwmon attributes could be
-also discovered on line cards. While the initialization flow for main
-board and for line cards is the same, the configuration flow is
-different.
-
-The purpose of this patch is to allow reusing of initialization flow by
-main board and line cards.
-
-mlxsw: core_hwmon: Extend internal structures to support multi hwmon objects
-
-Currently, mlxsw supports a single hwmon device and registers it with
-attributes corresponding to the various objects found on the main
-board such as fans and gearboxes.
-
-Line cards can have the same objects, but unlike the main board they
-can be added and removed while the system is running. The various
-hwmon objects found on these line cards should be created when the
-line card becomes available and destroyed when the line card becomes
-unavailable.
-
-The above can be achieved by representing each line card as a
-different hwmon device and registering / unregistering it when the
-line card becomes available / unavailable.
-
-Prepare for multi hwmon device support by splitting
-'struct mlxsw_hwmon' into 'struct mlxsw_hwmon' and
-'struct mlxsw_hwmon_dev'. The first will hold information relevant to
-all hwmon devices, whereas the second will hold per-hwmon device
-information.
-
-mlxsw: core_hwmon: Introduce slot parameter in hwmon interfaces
-
-Add 'slot' parameter to 'mlxsw_hwmon_dev' structure. Use this parameter
-in mlxsw_reg_mtmp_pack(), mlxsw_reg_mtbr_pack() and
-Use mlxsw_reg_mtmp_slot_index_set() routines.
-For main board it'll always be zero, for line cards it'll be set to
-the physical slot number in modular systems.
-
-mlxsw: core_hwmon: Extend hwmon device with gearbox mapping field
-
-Add gearbox mapping field to 'mlxsw_hwmon_dev' structure. It should
-provide the mapping for gearbox sensor indexes, given gearbox number.
-For main board mapping is supposed to be always sequential, while for
-line cards on modular system it could be non-sequential.
-
-mlxsw: core_thermal: Extend internal structures to support multi thermal areas
-
-Introduce intermediate level for thermal zones areas.
-Currently all thermal zones are associated with thermal objects located
-within the main board. Such objects are created during driver
-initialization and removed during driver de-initialization.
-
-For line cards in modular system the thermal zones are to be associated
-with the specific line card. They should be created whenever new line
-card is available (inserted, validated, powered and enabled) and
-removed, when line card is getting unavailable.
-The thermal objects found on the line card #n are accessed by setting
-slot index to #n, while for access to objects found on the main board
-slot index should be set to default value zero.
-
-Each thermal area contains the set of thermal zones associated with
-particular slot index.
-Thus introduction of thermal zone areas allows to use the same APIs for
-the main board and line cards, by adding slot index argument.
-
-mlxsw: core_thermal: Introduce slot argument in thermal interfaces
-
-Add 'slot_index' argument to 'mlxsw_thermal_module' and
-'mlxsw_thermal_area' structures. Use it in mlxsw_reg_mtmp_pack() for
-setting slot number for the thermal zones associated with the cages and
-gearboxes.
-
-For main board it'll be always zero, for line cards it'll be set to
-the physical slot number in modular systems.
-
-The thermal zones associated with ASIC ambient temperatures should be
-always accessed with slot zero - main thermal zone.
-
-mlxsw: core: Extend interfaces for cable info access with slot argument
-
-Extend APIs mlxsw_env_get_module_eeprom(), mlxsw_env_get_module_info()
-used for reading cable information with slot index argument.
-Extend API mlxsw_env_init() used for environment initialization with
-slot index argument.
-For main board slot will be always set to zero and these APIs will work
-as before. If reading cable information is required from the cages
-located on line card, slot should be set to the physical slot number, where
-line card is located in modular systems.
-
-mlxsw: minimal: Extend port structure with slot index field
-
-A number of registers have been extended with 'slot_index' field for
-line card support. The purpose of this field is to indicate the
-location of the port, so that it could be used when trying to read
-module info.
-
-For main board it'll always be zero, for line cards it'll be set to the
-physical slot number at which line card is located. For now the slot
-index is always 0.
-That is, ports are still not instantiated from line cards.
-
-Add 'slot_index' field to 'mlxsw_m_port' structure. Use it for module
-info access.
-
-mlxsw: core_thermal: Rename labels according to naming convention
-
-Rename labels for error flow handling in order to align with naming
-convention used in rest 'mlxsw' code.
-
-mlxsw: core_thermal: Split gearbox initialization
-
-Split gearbox initialization in two routines - the first one is to be
-used for gearbox configuration validation, the second for creation of
-gearbox related thermal zones if any.
-
-Currently, mlxsw supports gearbox thermal zones corresponding to the
-main board. For system equipped with the line cards assembled with the
-gearboxes, thermal zones will be associated with the gearboxes found on
-those line cards.
-
-While the initialization flow for main board and for line cards is the
-same, the configuration flow is different.
-
-The purpose of this patch is to allow reusing of initialization flow by
-main board and line cards.
-
-mlxsw: core_thermal: Extend thermal area with gearbox mapping field
-
-Add gearbox mapping field 'gearbox_sensor_map' to
-'mlxsw_thermal_module' structure. It should provide the mapping for
-gearbox sensor indexes, given gearbox number. For main board mapping is
-supposed to be always sequential, while for line cards on modular
-system it could be non-sequential.
-
-mlxsw: core_thermal: Add line card id prefix to line card thermal zone name
-
-Add prefix "lc#n" to thermal zones associated with the thermal objects
-found on line cards.
-
-For example thermal zone for module #9 located at line card #7 will
-have type:
-mlxsw-lc7-module9.
-And thermal zone for gearbox #3 located at line card #5 will have type:
-mlxsw-lc5-gearbox3.
-
-mlxsw: core_hwmon: Add line card id prefix to line card label attribute names
-
-Add prefix "linecard#n" to 'hwmon' label attributes for the 'hwmon'
-objects found on the line cards.
-
-For example cage temperature for module #9 located at line card #7 will
-be exposed by utility 'sensors' like:
-linecard#07 front panel 009:	+32.0°C  (crit = +70.0°C, emerg = +80.0°C)
-And temperature for gearbox #3 located at line card #5 will be exposed
-like:
-linecard#05 gearbox 003:		+41.0°C  (highest = +41.0°C)
-
-For now the slot index is always 0 and field 'name' of the structure
-'mlxsw_hwmon_dev' is empty. For line card this field is supposed to
-be initialized to 'linecard#n', when line card in slot #n is enabled.
-
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
- drivers/net/ethernet/mellanox/mlxsw/core_env.c     |  97 ++++--
+ drivers/net/ethernet/mellanox/mlxsw/core_env.c     |  79 +++--
  drivers/net/ethernet/mellanox/mlxsw/core_env.h     |  17 +-
  drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   | 383 ++++++++++++++-------
- drivers/net/ethernet/mellanox/mlxsw/core_thermal.c | 265 +++++++++-----
+ drivers/net/ethernet/mellanox/mlxsw/core_thermal.c | 262 +++++++++-----
  drivers/net/ethernet/mellanox/mlxsw/minimal.c      |  12 +-
- drivers/net/ethernet/mellanox/mlxsw/reg.h          |  58 +++-
- 6 files changed, 551 insertions(+), 281 deletions(-)
+ drivers/net/ethernet/mellanox/mlxsw/reg.h          |  53 ++-
+ 6 files changed, 534 insertions(+), 272 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_env.c b/drivers/net/ethernet/mellanox/mlxsw/core_env.c
-index bdcbdb654..58560f11e 100644
+index 80c8432dde18..0cc713de0f06 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_env.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_env.c
-@@ -27,7 +27,7 @@ enum mlxsw_env_cmis_banks {
- 	MLXSW_ENV_CMIS_BANKS4	= 0x10, /* Banks 0, 1, 2, 3 are implemented.*/
- };
+@@ -16,7 +16,7 @@
+ 	MLXSW_REG_MCIA_TH_PAGE_NUM) ? (page) : (page) + \
+ 	MLXSW_ENV_CMIS_PAGE_OFF)
  
 -static int mlxsw_env_validate_cable_ident(struct mlxsw_core *core, int id,
 +static int mlxsw_env_validate_cable_ident(struct mlxsw_core *core, u8 slot_index, int id,
  					  bool *qsfp, bool *cmis)
  {
  	char eeprom_tmp[MLXSW_REG_MCIA_EEPROM_SIZE];
-@@ -35,7 +35,8 @@ static int mlxsw_env_validate_cable_ident(struct mlxsw_core *core, int id,
+@@ -24,8 +24,9 @@ static int mlxsw_env_validate_cable_ident(struct mlxsw_core *core, int id,
  	u8 ident;
  	int err;
  
--	mlxsw_reg_mcia_pack(mcia_pl, id, 0, MLXSW_REG_MCIA_PAGE0_LO_OFF, 0, 0,
+-	mlxsw_reg_mcia_pack(mcia_pl, id, 0, MLXSW_REG_MCIA_PAGE0_LO_OFF, 0, 1,
+-			    MLXSW_REG_MCIA_I2C_ADDR_LOW);
 +	mlxsw_reg_mcia_pack(mcia_pl, slot_index, id, 0,
-+			    MLXSW_REG_MCIA_PAGE0_LO_OFF, 0, 0,
- 			    1, MLXSW_REG_MCIA_I2C_ADDR_LOW);
++			    MLXSW_REG_MCIA_PAGE0_LO_OFF, 0,
++			    1, MLXSW_REG_MCIA_I2C_ADDR_LOW);
  	err = mlxsw_reg_query(core, MLXSW_REG(mcia), mcia_pl);
  	if (err)
-@@ -126,9 +127,9 @@ mlxsw_env_cmis_opt_page_banks_map(u8 opt_page, u8 opt_banks, u8 *page,
+ 		return err;
+@@ -55,8 +56,8 @@ static int mlxsw_env_validate_cable_ident(struct mlxsw_core *core, int id,
  }
  
  static int
 -mlxsw_env_query_module_eeprom(struct mlxsw_core *mlxsw_core, int module,
 -			      u16 offset, u16 size, bool qsfp, bool cmis,
--			      u8 opt_page, u8 opt_banks,
 +mlxsw_env_query_module_eeprom(struct mlxsw_core *mlxsw_core, u8 slot_index,
-+			      int module, u16 offset, u16 size, bool qsfp,
-+			      bool cmis, u8 opt_page, u8 opt_banks,
++			      int module, u16 offset, u16 size, bool qsfp, bool cmis,
  			      void *data, unsigned int *p_read_size)
  {
  	char eeprom_tmp[MLXSW_REG_MCIA_EEPROM_SIZE];
-@@ -138,6 +139,10 @@ mlxsw_env_query_module_eeprom(struct mlxsw_core *mlxsw_core, int module,
+@@ -66,6 +67,10 @@ mlxsw_env_query_module_eeprom(struct mlxsw_core *mlxsw_core, int module,
  	int status;
  	int err;
  
@@ -316,7 +96,7 @@ index bdcbdb654..58560f11e 100644
  	size = min_t(u16, size, MLXSW_REG_MCIA_EEPROM_SIZE);
  
  	if (offset < MLXSW_REG_MCIA_EEPROM_PAGE_LENGTH &&
-@@ -148,12 +153,22 @@ mlxsw_env_query_module_eeprom(struct mlxsw_core *mlxsw_core, int module,
+@@ -76,12 +81,22 @@ mlxsw_env_query_module_eeprom(struct mlxsw_core *mlxsw_core, int module,
  	i2c_addr = MLXSW_REG_MCIA_I2C_ADDR_LOW;
  	if (offset >= MLXSW_REG_MCIA_EEPROM_PAGE_LENGTH) {
  		if (qsfp) {
@@ -341,36 +121,17 @@ index bdcbdb654..58560f11e 100644
  			i2c_addr = MLXSW_REG_MCIA_I2C_ADDR_HIGH;
  			offset -= MLXSW_REG_MCIA_EEPROM_PAGE_LENGTH;
  		}
-@@ -163,7 +178,7 @@ mlxsw_env_query_module_eeprom(struct mlxsw_core *mlxsw_core, int module,
- 	if (cmis && page >= MLXSW_ENV_CMIS_OPT_PAGE)
- 		mlxsw_env_cmis_opt_page_banks_map(opt_page, opt_banks, &page,
- 						  &bank);
--	mlxsw_reg_mcia_pack(mcia_pl, module, 0, page, bank, offset, size,
-+	mlxsw_reg_mcia_pack(mcia_pl, slot_index, module, 0, page, bank, offset, size,
- 			    i2c_addr);
+@@ -89,7 +104,8 @@ mlxsw_env_query_module_eeprom(struct mlxsw_core *mlxsw_core, int module,
+ 
+ 	if (cmis)
+ 		page = MLXSW_ENV_PAGE_MAP(page);
+-	mlxsw_reg_mcia_pack(mcia_pl, module, 0, page, offset, size, i2c_addr);
++	mlxsw_reg_mcia_pack(mcia_pl, slot_index, module, 0, page, offset, size,
++			    i2c_addr);
  
  	err = mlxsw_reg_query(mlxsw_core, MLXSW_REG(mcia), mcia_pl);
-@@ -182,8 +197,8 @@ mlxsw_env_query_module_eeprom(struct mlxsw_core *mlxsw_core, int module,
- }
- 
- static int
--mlxsw_env_cmis_optional_get(struct mlxsw_core *mlxsw_core, int module,
--			    unsigned int *size, u8 *page, u8 *banks)
-+mlxsw_env_cmis_optional_get(struct mlxsw_core *mlxsw_core, u8 slot_index,
-+			    int module, unsigned int *size, u8 *page, u8 *banks)
- {
- 	int options, read_size, num_banks;
- 	int err;
-@@ -194,7 +209,7 @@ mlxsw_env_cmis_optional_get(struct mlxsw_core *mlxsw_core, int module,
- 	 * Table 8-28 "Implemented Management Interface Features Advertising
- 	 * (Page 01h)".
- 	 */
--	err = mlxsw_env_query_module_eeprom(mlxsw_core, module,
-+	err = mlxsw_env_query_module_eeprom(mlxsw_core, slot_index, module,
- 					    MLXSW_ENV_CMIS_PAGE3_PRESENSE_OFF,
- 					    1, false, false, 0, 0, &options,
- 					    &read_size);
-@@ -234,8 +249,8 @@ mlxsw_env_cmis_optional_get(struct mlxsw_core *mlxsw_core, int module,
+ 	if (err)
+@@ -106,8 +122,8 @@ mlxsw_env_query_module_eeprom(struct mlxsw_core *mlxsw_core, int module,
  	return 0;
  }
  
@@ -381,7 +142,7 @@ index bdcbdb654..58560f11e 100644
  {
  	char eeprom_tmp[MLXSW_REG_MCIA_EEPROM_SIZE];
  	union {
-@@ -249,8 +264,9 @@ int mlxsw_env_module_temp_thresholds_get(struct mlxsw_core *core, int module,
+@@ -121,8 +137,9 @@ int mlxsw_env_module_temp_thresholds_get(struct mlxsw_core *core, int module,
  	int page;
  	int err;
  
@@ -393,7 +154,7 @@ index bdcbdb654..58560f11e 100644
  	err = mlxsw_reg_query(core, MLXSW_REG(mtmp), mtmp_pl);
  	if (err)
  		return err;
-@@ -270,21 +286,25 @@ int mlxsw_env_module_temp_thresholds_get(struct mlxsw_core *core, int module,
+@@ -142,21 +159,25 @@ int mlxsw_env_module_temp_thresholds_get(struct mlxsw_core *core, int module,
  	 */
  
  	/* Validate module identifier value. */
@@ -411,18 +172,18 @@ index bdcbdb654..58560f11e 100644
  			page = MLXSW_REG_MCIA_TH_PAGE_CMIS_NUM;
  		else
  			page = MLXSW_REG_MCIA_TH_PAGE_NUM;
--		mlxsw_reg_mcia_pack(mcia_pl, module, 0, page, 0,
-+		mlxsw_reg_mcia_pack(mcia_pl, slot_index, module, 0, page, 0,
+-		mlxsw_reg_mcia_pack(mcia_pl, module, 0, page,
++		mlxsw_reg_mcia_pack(mcia_pl, slot_index, module, 0, page,
  				    MLXSW_REG_MCIA_TH_PAGE_OFF + off,
  				    MLXSW_REG_MCIA_TH_ITEM_SIZE,
  				    MLXSW_REG_MCIA_I2C_ADDR_LOW);
  	} else {
 -		mlxsw_reg_mcia_pack(mcia_pl, module, 0,
 +		mlxsw_reg_mcia_pack(mcia_pl, slot_index, module, 0,
- 				    MLXSW_REG_MCIA_PAGE0_LO, 0,
+ 				    MLXSW_REG_MCIA_PAGE0_LO,
  				    off, MLXSW_REG_MCIA_TH_ITEM_SIZE,
  				    MLXSW_REG_MCIA_I2C_ADDR_HIGH);
-@@ -301,18 +321,17 @@ int mlxsw_env_module_temp_thresholds_get(struct mlxsw_core *core, int module,
+@@ -173,19 +194,17 @@ int mlxsw_env_module_temp_thresholds_get(struct mlxsw_core *core, int module,
  	return 0;
  }
  
@@ -434,44 +195,33 @@ index bdcbdb654..58560f11e 100644
  	u8 module_info[MLXSW_REG_MCIA_EEPROM_MODULE_INFO_SIZE];
  	u16 offset = MLXSW_REG_MCIA_EEPROM_MODULE_INFO_SIZE;
  	u8 module_rev_id, module_id, diag_mon;
- 	unsigned int read_size, opt_size = 0;
+ 	unsigned int read_size;
 -	bool unused = false;
  	int err;
  
 -	err = mlxsw_env_query_module_eeprom(mlxsw_core, module, 0, offset,
--					    unused, unused, 0, 0, module_info,
+-					    unused, unused, module_info,
+-					    &read_size);
 +	err = mlxsw_env_query_module_eeprom(mlxsw_core, slot_index, module, 0, offset,
-+					    false, false, 0, 0, module_info,
- 					    &read_size);
++					    false, false, module_info, &read_size);
  	if (err)
  		return err;
-@@ -343,9 +362,9 @@ int mlxsw_env_get_module_info(struct mlxsw_core *mlxsw_core, int module,
+ 
+@@ -215,10 +234,9 @@ int mlxsw_env_get_module_info(struct mlxsw_core *mlxsw_core, int module,
  	case MLXSW_REG_MCIA_EEPROM_MODULE_INFO_ID_SFP: /* fall-through */
  	case MLXSW_REG_MCIA_EEPROM_MODULE_INFO_ID_SFP_DD:
  		/* Verify if transceiver provides diagnostic monitoring page */
 -		err = mlxsw_env_query_module_eeprom(mlxsw_core, module,
 -						    SFP_DIAGMON, 1, unused,
--						    unused, 0, 0, &diag_mon,
+-						    unused, &diag_mon,
+-						    &read_size);
 +		err = mlxsw_env_query_module_eeprom(mlxsw_core, slot_index,
 +						    module, SFP_DIAGMON, 1, false,
-+						    false, 0, 0, &diag_mon,
- 						    &read_size);
++						    false, &diag_mon, &read_size);
  		if (err)
  			return err;
-@@ -370,9 +389,9 @@ int mlxsw_env_get_module_info(struct mlxsw_core *mlxsw_core, int module,
- 			modinfo->eeprom_len = ETH_MODULE_SFF_8636_LEN;
- 		} else {
- 			/* Get size of optional pages and banks. */
--			err = mlxsw_env_cmis_optional_get(mlxsw_core, module,
--							  &opt_size, NULL,
--							  NULL);
-+			err = mlxsw_env_cmis_optional_get(mlxsw_core, slot_index,
-+							  module, &opt_size,
-+							  NULL, NULL);
- 			if (err)
- 				return err;
  
-@@ -389,12 +408,13 @@ int mlxsw_env_get_module_info(struct mlxsw_core *mlxsw_core, int module,
+@@ -252,8 +270,9 @@ int mlxsw_env_get_module_info(struct mlxsw_core *mlxsw_core, int module,
  EXPORT_SYMBOL(mlxsw_env_get_module_info);
  
  int mlxsw_env_get_module_eeprom(struct net_device *netdev,
@@ -481,44 +231,27 @@ index bdcbdb654..58560f11e 100644
 +				int module, struct ethtool_eeprom *ee,
 +				u8 *data)
  {
- 	u8 opt_page = 0, opt_banks = 0;
--	unsigned int read_size;
  	int offset = ee->offset;
-+	unsigned int read_size;
- 	bool qsfp, cmis;
- 	int i = 0;
- 	int err;
-@@ -403,21 +423,22 @@ int mlxsw_env_get_module_eeprom(struct net_device *netdev,
- 		return -EINVAL;
- 
+ 	unsigned int read_size;
+@@ -267,12 +286,14 @@ int mlxsw_env_get_module_eeprom(struct net_device *netdev,
  	memset(data, 0, ee->len);
--
--	/* Validate module identifier type. */
+ 
+ 	/* Validate module identifier type. */
 -	err = mlxsw_env_validate_cable_ident(mlxsw_core, module, &qsfp, &cmis);
-+	/* Validate module identifier value. */
 +	err = mlxsw_env_validate_cable_ident(mlxsw_core, slot_index, module,
 +					     &qsfp, &cmis);
  	if (err)
  		return err;
- 
- 	if (cmis) {
--		err = mlxsw_env_cmis_optional_get(mlxsw_core, module, NULL,
--						  &opt_page, &opt_banks);
-+		err = mlxsw_env_cmis_optional_get(mlxsw_core, slot_index, module,
-+						  NULL, &opt_page, &opt_banks);
- 		if (err)
- 			return err;
- 	}
  
  	while (i < ee->len) {
 -		err = mlxsw_env_query_module_eeprom(mlxsw_core, module, offset,
 +		err = mlxsw_env_query_module_eeprom(mlxsw_core, slot_index,
 +						    module, offset,
  						    ee->len - i, qsfp, cmis,
- 						    opt_page, opt_banks,
  						    data + i, &read_size);
+ 		if (err) {
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_env.h b/drivers/net/ethernet/mellanox/mlxsw/core_env.h
-index 064d0e770..acccf90d2 100644
+index 064d0e770c01..acccf90d2422 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_env.h
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_env.h
 @@ -4,14 +4,19 @@
@@ -548,7 +281,7 @@ index 064d0e770..acccf90d2 100644
  
  #endif
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
-index 3fe878d7c..6c95335c2 100644
+index 3fe878d7c94c..6c95335c23ea 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
 @@ -12,28 +12,39 @@
@@ -1294,7 +1027,7 @@ index 3fe878d7c..6c95335c2 100644
  	kfree(mlxsw_hwmon);
  }
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
-index d77c4c82b..57204bb2e 100644
+index da0100810118..23bb61a4fc28 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 @@ -97,13 +97,25 @@ static const struct mlxsw_thermal_trip default_thermal_trips[] = {
@@ -1353,7 +1086,7 @@ index d77c4c82b..57204bb2e 100644
  						   SFP_TEMP_HIGH_ALARM,
  						   &emerg_temp);
  	if (err)
-@@ -327,7 +338,7 @@ static int mlxsw_thermal_get_temp(struct thermal_zone_device *tzdev,
+@@ -330,7 +341,7 @@ static int mlxsw_thermal_get_temp(struct thermal_zone_device *tzdev,
  		return 0;
  	}
  
@@ -1362,7 +1095,7 @@ index d77c4c82b..57204bb2e 100644
  
  	err = mlxsw_reg_query(thermal->core, MLXSW_REG(mtmp), mtmp_pl);
  	if (err) {
-@@ -414,7 +425,7 @@ static int mlxsw_thermal_trend_get(struct thermal_zone_device *tzdev,
+@@ -417,7 +428,7 @@ static int mlxsw_thermal_trend_get(struct thermal_zone_device *tzdev,
  	return 0;
  }
  
@@ -1371,7 +1104,7 @@ index d77c4c82b..57204bb2e 100644
  	.no_hwmon = true,
  };
  
-@@ -451,11 +462,11 @@ static int mlxsw_thermal_module_bind(struct thermal_zone_device *tzdev,
+@@ -454,11 +465,11 @@ static int mlxsw_thermal_module_bind(struct thermal_zone_device *tzdev,
  						       trip->min_state,
  						       THERMAL_WEIGHT_DEFAULT);
  		if (err < 0)
@@ -1385,7 +1118,7 @@ index d77c4c82b..57204bb2e 100644
  	for (j = i - 1; j >= 0; j--)
  		thermal_zone_unbind_cooling_device(tzdev, j, cdev);
  	return err;
-@@ -528,8 +539,9 @@ static int mlxsw_thermal_module_temp_get(struct thermal_zone_device *tzdev,
+@@ -531,8 +542,9 @@ static int mlxsw_thermal_module_temp_get(struct thermal_zone_device *tzdev,
  	}
  
  	/* Read module temperature. */
@@ -1397,7 +1130,7 @@ index d77c4c82b..57204bb2e 100644
  	err = mlxsw_reg_query(thermal->core, MLXSW_REG(mtmp), mtmp_pl);
  	if (err) {
  		/* Do not return error - in case of broken module's sensor
-@@ -659,8 +671,8 @@ static int mlxsw_thermal_gearbox_temp_get(struct thermal_zone_device *tzdev,
+@@ -662,8 +674,8 @@ static int mlxsw_thermal_gearbox_temp_get(struct thermal_zone_device *tzdev,
  		return 0;
  	}
  
@@ -1408,7 +1141,7 @@ index d77c4c82b..57204bb2e 100644
  
  	err = mlxsw_reg_query(thermal->core, MLXSW_REG(mtmp), mtmp_pl);
  	if (err)
-@@ -794,14 +806,19 @@ mlxsw_thermal_module_tz_init(struct mlxsw_thermal_module *module_tz)
+@@ -797,14 +809,19 @@ mlxsw_thermal_module_tz_init(struct mlxsw_thermal_module *module_tz)
  	char tz_name[MLXSW_THERMAL_ZONE_MAX_NAME];
  	int err;
  
@@ -1435,7 +1168,7 @@ index d77c4c82b..57204bb2e 100644
  	if (IS_ERR(module_tz->tzdev)) {
  		err = PTR_ERR(module_tz->tzdev);
  		return err;
-@@ -818,15 +835,18 @@ static void mlxsw_thermal_module_tz_fini(struct thermal_zone_device *tzdev)
+@@ -821,15 +838,18 @@ static void mlxsw_thermal_module_tz_fini(struct thermal_zone_device *tzdev)
  
  static int
  mlxsw_thermal_module_init(struct device *dev, struct mlxsw_core *core,
@@ -1456,7 +1189,7 @@ index d77c4c82b..57204bb2e 100644
  	module_tz->parent = thermal;
  	memcpy(module_tz->trips, default_thermal_trips,
  	       sizeof(thermal->trips));
-@@ -847,75 +867,81 @@ static void mlxsw_thermal_module_fini(struct mlxsw_thermal_module *module_tz)
+@@ -850,66 +870,67 @@ static void mlxsw_thermal_module_fini(struct mlxsw_thermal_module *module_tz)
  
  static int
  mlxsw_thermal_modules_init(struct device *dev, struct mlxsw_core *core,
@@ -1548,10 +1281,9 @@ index d77c4c82b..57204bb2e 100644
  }
  
  static int
- mlxsw_thermal_gearbox_tz_init(struct mlxsw_thermal_module *gearbox_tz)
+@@ -917,8 +938,12 @@ mlxsw_thermal_gearbox_tz_init(struct mlxsw_thermal_module *gearbox_tz)
  {
  	char tz_name[MLXSW_THERMAL_ZONE_MAX_NAME];
-+	int ret;
  
 -	snprintf(tz_name, sizeof(tz_name), "mlxsw-gearbox%d",
 -		 gearbox_tz->module + 1);
@@ -1564,7 +1296,7 @@ index d77c4c82b..57204bb2e 100644
  	gearbox_tz->tzdev = thermal_zone_device_register(tz_name,
  						MLXSW_THERMAL_NUM_TRIPS,
  						MLXSW_THERMAL_TRIP_MASK,
-@@ -936,68 +962,99 @@ mlxsw_thermal_gearbox_tz_fini(struct mlxsw_thermal_module *gearbox_tz)
+@@ -939,68 +964,99 @@ mlxsw_thermal_gearbox_tz_fini(struct mlxsw_thermal_module *gearbox_tz)
  }
  
  static int
@@ -1693,7 +1425,7 @@ index d77c4c82b..57204bb2e 100644
  }
  
  int mlxsw_thermal_init(struct mlxsw_core *core,
-@@ -1017,6 +1074,12 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
+@@ -1020,6 +1076,12 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
  	if (!thermal)
  		return -ENOMEM;
  
@@ -1706,7 +1438,7 @@ index d77c4c82b..57204bb2e 100644
  	thermal->core = core;
  	thermal->bus_info = bus_info;
  	memcpy(thermal->trips, default_thermal_trips, sizeof(thermal->trips));
-@@ -1025,7 +1088,7 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
+@@ -1028,7 +1090,7 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
  	err = mlxsw_reg_query(thermal->core, MLXSW_REG(mfcr), mfcr_pl);
  	if (err) {
  		dev_err(dev, "Failed to probe PWMs\n");
@@ -1715,7 +1447,7 @@ index d77c4c82b..57204bb2e 100644
  	}
  	mlxsw_reg_mfcr_unpack(mfcr_pl, &freq, &tacho_active, &pwm_active);
  
-@@ -1039,14 +1102,14 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
+@@ -1042,14 +1104,14 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
  			err = mlxsw_reg_query(thermal->core, MLXSW_REG(mfsl),
  					      mfsl_pl);
  			if (err)
@@ -1732,7 +1464,7 @@ index d77c4c82b..57204bb2e 100644
  		}
  	}
  	for (i = 0; i < MLXSW_MFCR_PWMS_MAX; i++) {
-@@ -1059,7 +1122,7 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
+@@ -1062,7 +1124,7 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
  			if (IS_ERR(cdev)) {
  				err = PTR_ERR(cdev);
  				dev_err(dev, "Failed to register cooling device\n");
@@ -1741,7 +1473,7 @@ index d77c4c82b..57204bb2e 100644
  			}
  			thermal->cdevs[i] = cdev;
  		}
-@@ -1084,34 +1147,46 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
+@@ -1087,34 +1149,44 @@ int mlxsw_thermal_init(struct mlxsw_core *core,
  	if (IS_ERR(thermal->tzdev)) {
  		err = PTR_ERR(thermal->tzdev);
  		dev_err(dev, "Failed to register thermal zone\n");
@@ -1773,8 +1505,6 @@ index d77c4c82b..57204bb2e 100644
 -err_unreg_modules_tzdev:
 -	mlxsw_thermal_modules_fini(thermal);
 -err_unreg_tzdev:
-+err_thermal_zone_device_enable:
-+	mlxsw_thermal_gearboxes_fini(thermal, thermal->main);
 +err_thermal_gearboxes_init:
 +	mlxsw_thermal_gearboxes_main_fini(thermal->main);
 +err_thermal_gearboxes_main_init:
@@ -1798,7 +1528,7 @@ index d77c4c82b..57204bb2e 100644
  	devm_kfree(dev, thermal);
  	return err;
  }
-@@ -1120,8 +1195,9 @@ void mlxsw_thermal_fini(struct mlxsw_thermal *thermal)
+@@ -1123,8 +1195,9 @@ void mlxsw_thermal_fini(struct mlxsw_thermal *thermal)
  {
  	int i;
  
@@ -1810,7 +1540,7 @@ index d77c4c82b..57204bb2e 100644
  	if (thermal->tzdev) {
  		thermal_zone_device_unregister(thermal->tzdev);
  		thermal->tzdev = NULL;
-@@ -1134,5 +1210,6 @@ void mlxsw_thermal_fini(struct mlxsw_thermal *thermal)
+@@ -1137,5 +1210,6 @@ void mlxsw_thermal_fini(struct mlxsw_thermal *thermal)
  		}
  	}
  
@@ -1818,7 +1548,7 @@ index d77c4c82b..57204bb2e 100644
  	devm_kfree(thermal->bus_info->dev, thermal);
  }
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index 8cc969758..9379750bf 100644
+index 8cc969758f2f..9379750bfea2 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 @@ -34,6 +34,7 @@ struct mlxsw_m {
@@ -1867,7 +1597,7 @@ index 8cc969758..9379750bf 100644
  		return 0;
  
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/reg.h b/drivers/net/ethernet/mellanox/mlxsw/reg.h
-index dd2db9aee..63424e4dc 100644
+index a5952a03f517..278bfa01120c 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/reg.h
 +++ b/drivers/net/ethernet/mellanox/mlxsw/reg.h
 @@ -7932,6 +7932,12 @@ MLXSW_ITEM32(reg, mtcap, sensor_count, 0x00, 0, 7);
@@ -1938,39 +1668,22 @@ index dd2db9aee..63424e4dc 100644
  /* reg_mcia_status
   * Module status.
   * Access: RO
-@@ -8179,6 +8199,7 @@ MLXSW_ITEM32(reg, mcia, size, 0x08, 0, 16);
- #define MLXSW_REG_MCIA_TH_PAGE_CMIS_NUM		2
- #define MLXSW_REG_MCIA_PAGE0_LO			0
- #define MLXSW_REG_MCIA_TH_PAGE_OFF		0x80
-+#define MLXSW_REG_MCIA_EEPROM_CMIS_FLAT_MEMORY	BIT(7)
- 
- enum mlxsw_reg_mcia_eeprom_module_info_rev_id {
- 	MLXSW_REG_MCIA_EEPROM_MODULE_INFO_REV_ID_UNSPC	= 0x00,
-@@ -8209,16 +8230,21 @@ enum mlxsw_reg_mcia_eeprom_module_info {
-  */
- MLXSW_ITEM_BUF(reg, mcia, eeprom, 0x10, MLXSW_REG_MCIA_EEPROM_SIZE);
- 
-+/* This is used to access the optional upper pages (1-3) in the QSFP+
-+ * memory map. Page 1 is available on offset 256 through 383, page 2 -
-+ * on offset 384 through 511, page 3 - on offset 512 through 639.
-+ */
- #define MLXSW_REG_MCIA_PAGE_GET(off) (((off) - \
+@@ -8207,11 +8227,12 @@ MLXSW_ITEM_BUF(reg, mcia, eeprom, 0x10, MLXSW_REG_MCIA_EEPROM_SIZE);
  				MLXSW_REG_MCIA_EEPROM_PAGE_LENGTH) / \
  				MLXSW_REG_MCIA_EEPROM_UP_PAGE_LENGTH + 1)
  
 -static inline void mlxsw_reg_mcia_pack(char *payload, u8 module, u8 lock,
--				       u8 page_number, u8 bank_number,
+-				       u8 page_number, u16 device_addr,
 +static inline void mlxsw_reg_mcia_pack(char *payload, u8 slot_index, u8 module,
-+				       u8 lock, u8 page_number, u8 bank_number,
- 				       u16 device_addr, u8 size,
- 				       u8 i2c_device_addr)
++				       u8 lock, u8 page_number, u16 device_addr,
+ 				       u8 size, u8 i2c_device_addr)
  {
  	MLXSW_REG_ZERO(mcia, payload);
 +	mlxsw_reg_mcia_slot_set(payload, slot_index);
  	mlxsw_reg_mcia_module_set(payload, module);
  	mlxsw_reg_mcia_l_set(payload, lock);
  	mlxsw_reg_mcia_page_number_set(payload, page_number);
-@@ -8955,6 +8981,12 @@ enum mlxsw_reg_mgpir_device_type {
+@@ -8947,6 +8968,12 @@ enum mlxsw_reg_mgpir_device_type {
  	MLXSW_REG_MGPIR_DEVICE_TYPE_GEARBOX_DIE,
  };
  
@@ -1983,7 +1696,7 @@ index dd2db9aee..63424e4dc 100644
  /* device_type
   * Access: RO
   */
-@@ -8972,21 +9004,29 @@ MLXSW_ITEM32(reg, mgpir, devices_per_flash, 0x00, 16, 8);
+@@ -8964,21 +8991,29 @@ MLXSW_ITEM32(reg, mgpir, devices_per_flash, 0x00, 16, 8);
   */
  MLXSW_ITEM32(reg, mgpir, num_of_devices, 0x00, 0, 8);
  
@@ -2015,7 +1728,7 @@ index dd2db9aee..63424e4dc 100644
  {
  	if (num_of_devices)
  		*num_of_devices = mlxsw_reg_mgpir_num_of_devices_get(payload);
-@@ -8997,6 +9037,8 @@ mlxsw_reg_mgpir_unpack(char *payload, u8 *num_of_devices,
+@@ -8989,6 +9024,8 @@ mlxsw_reg_mgpir_unpack(char *payload, u8 *num_of_devices,
  				mlxsw_reg_mgpir_devices_per_flash_get(payload);
  	if (num_of_modules)
  		*num_of_modules = mlxsw_reg_mgpir_num_of_modules_get(payload);

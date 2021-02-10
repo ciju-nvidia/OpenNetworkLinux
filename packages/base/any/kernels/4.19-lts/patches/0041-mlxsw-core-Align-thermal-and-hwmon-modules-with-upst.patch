@@ -1,18 +1,20 @@
-From a05c8186b1341f1ff16cf3187f8e56d11f1f215f Mon Sep 17 00:00:00 2001
+From b88fb56d19e7c586fd86ad069a2fd3b9a8f54920 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Thu, 3 Dec 2020 22:51:33 +0200
-Subject: [PATCH backport v4.19 1/2] mlxsw: core: hwmon: Align with upstream
- code
+Date: Mon, 8 Feb 2021 16:37:05 +0200
+Subject: [PATCH backport 4.19 1/1] mlxsw: core: Align thermal and hwmon
+ modules with upstream code
 
-Fix mismatches with upstream code.
+It contains some cosmetic change for alignment with upstream code.
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
- drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c | 34 +++++++++++-------------
- 1 file changed, 16 insertions(+), 18 deletions(-)
+ drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   | 34 ++++++++++------------
+ drivers/net/ethernet/mellanox/mlxsw/core_thermal.c | 12 ++++----
+ drivers/net/ethernet/mellanox/mlxsw/reg.h          |  4 +--
+ 3 files changed, 24 insertions(+), 26 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
-index b99062abc..3fe878d7c 100644
+index b99062abca90..3fe878d7c94c 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
 @@ -41,7 +41,7 @@ struct mlxsw_hwmon {
@@ -118,6 +120,55 @@ index b99062abc..3fe878d7c 100644
  			       MLXSW_REG_MTMP_GBOX_INDEX_MIN;
  		mlxsw_reg_mtmp_pack(mtmp_pl, sensor_index, true, true);
  		err = mlxsw_reg_write(mlxsw_hwmon->core,
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
+index 0d73b397c3e1..da0100810118 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
++++ b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
+@@ -945,7 +945,7 @@ mlxsw_thermal_gearboxes_init(struct device *dev, struct mlxsw_core *core,
+ 	enum mlxsw_reg_mgpir_device_type device_type;
+ 	struct mlxsw_thermal_module *gearbox_tz;
+ 	char mgpir_pl[MLXSW_REG_MGPIR_LEN];
+-	u8 num_of_device;
++	u8 gbox_num;
+ 	int i;
+ 	int err;
+ 
+@@ -955,15 +955,15 @@ mlxsw_thermal_gearboxes_init(struct device *dev, struct mlxsw_core *core,
+ 	mlxsw_reg_mgpir_pack(mgpir_pl);
+ 	err = mlxsw_reg_query(core, MLXSW_REG(mgpir), mgpir_pl);
+ 	if (err)
+-		return 0;
++		return err;
+ 
+-	mlxsw_reg_mgpir_unpack(mgpir_pl, &num_of_device, &device_type, NULL,
++	mlxsw_reg_mgpir_unpack(mgpir_pl, &gbox_num, &device_type, NULL,
+ 			       NULL);
+-	if ((device_type != MLXSW_REG_MGPIR_TYPE_GEARBOX_DIE) ||
+-	    !num_of_device)
++	if (device_type != MLXSW_REG_MGPIR_DEVICE_TYPE_GEARBOX_DIE ||
++	    !gbox_num)
+ 		return 0;
+ 
+-	thermal->tz_gearbox_num = num_of_device;
++	thermal->tz_gearbox_num = gbox_num;
+ 	thermal->tz_gearbox_arr = kcalloc(thermal->tz_gearbox_num,
+ 					  sizeof(*thermal->tz_gearbox_arr),
+ 					  GFP_KERNEL);
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/reg.h b/drivers/net/ethernet/mellanox/mlxsw/reg.h
+index 1ae22a6d6f43..a5952a03f517 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/reg.h
++++ b/drivers/net/ethernet/mellanox/mlxsw/reg.h
+@@ -8943,8 +8943,8 @@ static inline void mlxsw_reg_mprs_pack(char *payload, u16 parsing_depth,
+ MLXSW_REG_DEFINE(mgpir, MLXSW_REG_MGPIR_ID, MLXSW_REG_MGPIR_LEN);
+ 
+ enum mlxsw_reg_mgpir_device_type {
+-	MLXSW_REG_MGPIR_TYPE_NONE,
+-	MLXSW_REG_MGPIR_TYPE_GEARBOX_DIE,
++	MLXSW_REG_MGPIR_DEVICE_TYPE_NONE,
++	MLXSW_REG_MGPIR_DEVICE_TYPE_GEARBOX_DIE,
+ };
+ 
+ /* device_type
 -- 
 2.11.0
 

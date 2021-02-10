@@ -1,7 +1,7 @@
-From b2bb02f2c4ac450b71d111e7de0bf9cb9163b5dd Mon Sep 17 00:00:00 2001
+From cb4de56f5b1551eb925329beb4277048a8ba821f Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Thu, 17 Sep 2020 16:32:07 +0300
-Subject: [PATCH backport v4.19 3/3] i2c: mlxcpld: Add support for I2C bus
+Date: Wed, 6 Jan 2021 01:33:47 +0200
+Subject: [PATCH backport 4.19 02/11] i2c: mlxcpld: Add support for I2C bus
  frequency setting
 
 Add support for I2C bus frequency setting according to the specific
@@ -12,15 +12,16 @@ to be used for the devices attached to the I2C bus. Supported
 freqeuncies are 100KHz, 400KHz, 1MHz, while 100KHz is the default.
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
+Signed-off-by: Wolfram Sang <wsa@kernel.org>
 ---
- drivers/i2c/busses/i2c-mlxcpld.c | 62 +++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 61 insertions(+), 1 deletion(-)
+ drivers/i2c/busses/i2c-mlxcpld.c | 63 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 62 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/i2c/busses/i2c-mlxcpld.c b/drivers/i2c/busses/i2c-mlxcpld.c
-index 6da4b58ee..ceef9d43b 100644
+index ae0d17513422..fa8cc0b71531 100644
 --- a/drivers/i2c/busses/i2c-mlxcpld.c
 +++ b/drivers/i2c/busses/i2c-mlxcpld.c
-@@ -37,7 +37,9 @@
+@@ -11,7 +11,9 @@
  #include <linux/io.h>
  #include <linux/kernel.h>
  #include <linux/module.h>
@@ -30,7 +31,7 @@ index 6da4b58ee..ceef9d43b 100644
  
  /* General defines */
  #define MLXPLAT_CPLD_LPC_I2C_BASE_ADDR	0x2000
-@@ -72,6 +74,16 @@
+@@ -46,6 +48,16 @@
  #define MLXCPLD_LPCI2C_ACK_IND		1
  #define MLXCPLD_LPCI2C_NACK_IND		2
  
@@ -47,7 +48,7 @@ index 6da4b58ee..ceef9d43b 100644
  struct  mlxcpld_i2c_curr_xfer {
  	u8 cmd;
  	u8 addr_width;
-@@ -489,8 +501,44 @@ static struct i2c_adapter mlxcpld_i2c_adapter = {
+@@ -463,8 +475,45 @@ static struct i2c_adapter mlxcpld_i2c_adapter = {
  	.nr		= MLXCPLD_I2C_BUS_NUM,
  };
  
@@ -57,8 +58,9 @@ index 6da4b58ee..ceef9d43b 100644
 +{
 +	struct mlxreg_core_item *item = pdata->items;
 +	struct mlxreg_core_data *data;
++	u32 regval;
 +	u8 freq;
-+	int regval, err;
++	int err;
 +
 +	if (!item)
 +		return 0;
@@ -92,7 +94,7 @@ index 6da4b58ee..ceef9d43b 100644
  	struct mlxcpld_i2c_priv *priv;
  	int err;
  	u8 val;
-@@ -505,6 +553,14 @@ static int mlxcpld_i2c_probe(struct platform_device *pdev)
+@@ -479,6 +528,14 @@ static int mlxcpld_i2c_probe(struct platform_device *pdev)
  	priv->dev = &pdev->dev;
  	priv->base_addr = MLXPLAT_CPLD_LPC_I2C_BASE_ADDR;
  
@@ -107,7 +109,7 @@ index 6da4b58ee..ceef9d43b 100644
  	/* Register with i2c layer */
  	mlxcpld_i2c_adapter.timeout = usecs_to_jiffies(MLXCPLD_I2C_XFER_TO);
  	/* Read capability register */
-@@ -523,8 +579,12 @@ static int mlxcpld_i2c_probe(struct platform_device *pdev)
+@@ -497,8 +554,12 @@ static int mlxcpld_i2c_probe(struct platform_device *pdev)
  
  	err = i2c_add_numbered_adapter(&priv->adap);
  	if (err)
