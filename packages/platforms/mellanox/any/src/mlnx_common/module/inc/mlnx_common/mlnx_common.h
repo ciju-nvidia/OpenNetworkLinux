@@ -44,7 +44,8 @@
 /*led type 3 id */
 #define LED_FAN5 6
 #define LED_FAN6 7
-#define LED_PSU_T3 8
+#define LED_FAN7 8
+#define LED_PSU_T3 9
 
 #define PERCENTAGE_MIN 60.0
 #define PERCENTAGE_MAX 100.0
@@ -138,6 +139,8 @@ typedef struct mlnx_platform_info_s {
 
 #define PSU1_ID 1
 #define PSU2_ID 2
+#define PSU3_ID 3
+#define PSU4_ID 4
 #define HW_MANAGEMENT_PATH "/var/run/hw-management"
 #define SFP_PATH HW_MANAGEMENT_PATH"/sfp"
 #define THERMAL_PATH HW_MANAGEMENT_PATH"/thermal"

@@ -2,7 +2,7 @@ from onl.platform.base import *
 from onl.platform.mellanox import *
 
 class OnlPlatform_x86_64_mlnx_msn4800_r0(OnlPlatformMellanox,
-                                               OnlPlatformPortConfig_128x400):
+                                               OnlPlatformPortConfig_128x100):
     PLATFORM='x86-64-mlnx-msn4800-r0'
     MODEL="MSN4800"
     SYS_OBJECT_ID=".4800.1"

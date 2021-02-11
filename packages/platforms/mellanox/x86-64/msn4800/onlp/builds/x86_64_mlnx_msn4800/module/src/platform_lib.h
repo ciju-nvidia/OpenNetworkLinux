@@ -28,11 +28,11 @@
 #include "x86_64_mlnx_msn4800_log.h"
 
 #define CHASSIS_PSU_COUNT           4
-#define CPLD_COUNT                  2
+#define CPLD_COUNT                  3
 #define SFP_PORT_COUNT              128
 
 #define CHASSIS_TOTAL_FAN_COUNT     10
-#define CHASSIS_TOTAL_THERMAL_COUNT 14
+#define CHASSIS_TOTAL_THERMAL_COUNT 6
 #define CHASSIS_FAN_COUNT     (CHASSIS_TOTAL_FAN_COUNT - CHASSIS_PSU_COUNT)
 #define CHASSIS_THERMAL_COUNT (CHASSIS_TOTAL_THERMAL_COUNT - CHASSIS_PSU_COUNT)
 #define CHASSIS_LED_COUNT           8
