@@ -26,6 +26,7 @@ x86-64-mlnx-msn3700c-r0:
       rd_NO_MD
       rd_NO_LUKS
       i2c-ismt.enable=0
+      i2c_i801.disable_features=0x10  
 
   ##network
   ##  interfaces:
