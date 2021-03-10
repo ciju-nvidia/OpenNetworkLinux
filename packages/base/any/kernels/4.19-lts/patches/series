@@ -39,6 +39,7 @@ driver-hwmon-max6620.patch
 0036-mlxsw-core-Increase-critical-threshold-for-ASIC-ther.patch
 0037-hwmon-pmbus-Add-support-for-MPS-Multi-phase-mp2888-c.patch
 0038-mlxsw-core-Add-validation-of-transceiver-temperature.patch
+pinctrl-intel-backport-gpio-enable.patch
 0039-platform-mellanox-Add-dedicated-match-for-system-typ.patch
 0041-mlxsw-core-Align-thermal-and-hwmon-modules-with-upst.patch
 0044-platform-mellanox-mlxreg-hotplug-Use-capability-regi.patch
@@ -64,4 +65,12 @@ driver-hwmon-max6620.patch
 0064-platform-mellanox-mlxreg-hotplug-Add-line-card-event.patch
 0065-platform-mellanox-mlxreg-lc-Add-initial-support-for-.patch
 0066-mlxsw-core-Introduce-initial-chassis-management-supp.patch
-pinctrl-intel-backport-gpio-enable.patch
+0067-mlxsw-reg-Introduce-Management-Temperature-Extended-.patch
+0068-mlxsw-core-Add-APIs-for-thermal-sensor-mapping.patch
+0069-mlxsw-core_linecards-Add-line-card-objects-and-imple.patch
+0070-mlxsw-minimal-Extend-internal-structures-to-support-.patch
+0071-mlxsw-minimal-Add-support-for-line-card-event-handli.patch
+0072-mlxsw-core_thermal-Add-line-card-support.patch
+0073-mlxsw-core_hwmon-Add-line-card-support.patch
+0074-mlxsw-minimal-Add-support-line-card-ready-unready-ev.patch
+0075-platform-x86-mlx-platform-Extend-register-space-with.patch
