@@ -167,7 +167,8 @@ onlp_ledi_init(void)
      */
     mlnx_platform_info_t* mlnx_platform_info = get_platform_info();
 
-    if(!strcmp(mlnx_platform_info->onl_platform_name, "x86-64-mlnx_msn3700c-r0")) {
+    if( (!strcmp(mlnx_platform_info->onl_platform_name, "x86-64-mlnx_msn3700c-r0")) ||
+    	(!strcmp(mlnx_platform_info->onl_platform_name, "x86-64-mlnx_msn3700cs-r0")) ) {
     	mlnx_platform_info->linfo = linfo_c;
     	mlnx_platform_info->led_fnames = file_names_c;
     } else {

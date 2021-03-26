@@ -163,7 +163,8 @@ int
 onlp_thermali_init(void)
 {
     mlnx_platform_info_t* mlnx_platform_info = get_platform_info();
-    if(!strcmp(mlnx_platform_info->onl_platform_name, "x86-64-mlnx_msn3700c-r0")) {
+    if( (!strcmp(mlnx_platform_info->onl_platform_name, "x86-64-mlnx_msn3700c-r0")) ||
+    	(!strcmp(mlnx_platform_info->onl_platform_name, "x86-64-mlnx_msn3700cs-r0")) ) {
     	mlnx_platform_info->tinfo=tinfo_c;
     	mlnx_platform_info->thermal_fnames=thermal_fnames_c;
     } else {

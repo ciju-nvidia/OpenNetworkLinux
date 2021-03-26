@@ -126,7 +126,8 @@ int
 onlp_fani_init(void)
 {
     mlnx_platform_info_t* mlnx_platform_info = get_platform_info();
-    if(!strcmp(mlnx_platform_info->onl_platform_name, "x86-64-mlnx_msn3700c-r0")) {
+    if( (!strcmp(mlnx_platform_info->onl_platform_name, "x86-64-mlnx_msn3700c-r0")) ||
+    	(!strcmp(mlnx_platform_info->onl_platform_name, "x86-64-mlnx_msn3700cs-r0"))	) {
     	mlnx_platform_info->finfo = finfo_c;
     	mlnx_platform_info->fan_fnames = fan_path_c;
     } else {
