@@ -38,14 +38,16 @@ enum onlp_thermal_id
     THERMAL_CPU_CORE_1,
     THERMAL_CPU_CORE_2,
     THERMAL_CPU_CORE_3,
+    THERMAL_CPU_CORE_4,
+    THERMAL_CPU_CORE_5,
     THERMAL_CPU_PACK,
     THERMAL_ASIC,
     THERMAL_BOARD_AMB,
     THERMAL_PORT,
     THERMAL_ON_PSU1,
     THERMAL_ON_PSU2,
-	THERMAL_ON_PSU3,
-	THERMAL_ON_PSU4,
+    THERMAL_ON_PSU3,
+    THERMAL_ON_PSU4,
 };
 
 static char* thermal_fnames[] =  /* must map with onlp_thermal_id */
@@ -55,14 +57,16 @@ static char* thermal_fnames[] =  /* must map with onlp_thermal_id */
     "cpu_core1",
     "cpu_core2",
     "cpu_core3",
+    "cpu_core4",
+    "cpu_core5",
     "cpu_pack",
     "asic",
     "fan_amb",
     "port_amb",
     "psu1_temp",
     "psu2_temp",
-	"psu3_temp",
-	"psu4_temp",
+    "psu3_temp",
+    "psu4_temp",
 };
 
 /* Static values */
@@ -84,7 +88,15 @@ static onlp_thermal_info_t tinfo[] = {
             ONLP_THERMAL_STATUS_PRESENT,
             ONLP_THERMAL_CAPS_ALL, 0, CPU_THERMAL_THRESHOLD_INIT_DEFAULTS
         },
-    { { ONLP_THERMAL_ID_CREATE(THERMAL_CPU_PACK), "CPU pack", 0},
+	{ { ONLP_THERMAL_ID_CREATE(THERMAL_CPU_CORE_4), "CPU Core 4", 0},
+            ONLP_THERMAL_STATUS_PRESENT,
+            ONLP_THERMAL_CAPS_ALL, 0, CPU_THERMAL_THRESHOLD_INIT_DEFAULTS
+	},
+	{ { ONLP_THERMAL_ID_CREATE(THERMAL_CPU_CORE_5), "CPU Core 5", 0},
+            ONLP_THERMAL_STATUS_PRESENT,
+            ONLP_THERMAL_CAPS_ALL, 0, CPU_THERMAL_THRESHOLD_INIT_DEFAULTS
+	},
+	{ { ONLP_THERMAL_ID_CREATE(THERMAL_CPU_PACK), "CPU pack", 0},
             ONLP_THERMAL_STATUS_PRESENT,
             ONLP_THERMAL_CAPS_ALL, 0, CPU_THERMAL_THRESHOLD_INIT_DEFAULTS
         },
@@ -109,13 +121,13 @@ static onlp_thermal_info_t tinfo[] = {
             ONLP_THERMAL_CAPS_GET_TEMPERATURE, 0, {0,0,0}
         },
 	{ { ONLP_THERMAL_ID_CREATE(THERMAL_ON_PSU3), "PSU-3 Thermal Sensor 1", ONLP_PSU_ID_CREATE(PSU3_ID)},
-			ONLP_THERMAL_STATUS_PRESENT,
-			ONLP_THERMAL_CAPS_GET_TEMPERATURE, 0, {0,0,0}
-	},
+            ONLP_THERMAL_STATUS_PRESENT,
+            ONLP_THERMAL_CAPS_GET_TEMPERATURE, 0, {0,0,0}
+        },
 	{ { ONLP_THERMAL_ID_CREATE(THERMAL_ON_PSU4), "PSU-4 Thermal Sensor 1", ONLP_PSU_ID_CREATE(PSU4_ID)},
-			ONLP_THERMAL_STATUS_PRESENT,
-			ONLP_THERMAL_CAPS_GET_TEMPERATURE, 0, {0,0,0}
-	}
+            ONLP_THERMAL_STATUS_PRESENT,
+            ONLP_THERMAL_CAPS_GET_TEMPERATURE, 0, {0,0,0}
+	},
 };
 
 /*
