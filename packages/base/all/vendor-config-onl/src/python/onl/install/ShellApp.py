@@ -126,6 +126,8 @@ class OnieBootContext:
                 if initrd is None:
                     raise ValueError("cannot find ONIE initrd on %s" % parts[0].dir)
                 self.onieDir = parts[0].dir
+                if initrd.endswith('.sig'):
+                    initrd = initrd[:-4]
                 self.log.debug("found ONIE initrd at %s", initrd)
                 with InitrdContext(initrd=initrd, log=self.log) as self.ictx:
                     self.initrd = initrd
@@ -140,6 +142,8 @@ class OnieBootContext:
                     raise ValueError("cannot find ONIE initrd on %s" % dev)
                 self.onieDir = self.dctx.dir
                 self.dctx.detach()
+                if initrd.endswith('.sig'):
+                    initrd = initrd[:-4]
                 self.log.debug("found ONIE initrd at %s", initrd)
                 with InitrdContext(initrd=initrd, log=self.log) as self.ictx:
                     self.initrd = initrd
@@ -159,6 +163,8 @@ class OnieBootContext:
                                part.device, part.dir)
             else:
                 self.onieDir = part.dir
+                if initrd.endswith('.sig'):
+                    initrd = initrd[:-4]
                 self.log.debug("found ONIE initrd at %s", initrd)
                 with InitrdContext(initrd=initrd, log=self.log) as self.ictx:
                     self.initrd = initrd
