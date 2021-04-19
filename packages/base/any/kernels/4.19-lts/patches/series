@@ -74,4 +74,4 @@ pinctrl-intel-backport-gpio-enable.patch
 0073-mlxsw-core_hwmon-Add-line-card-support.patch
 0074-mlxsw-minimal-Add-support-line-card-ready-unready-ev.patch
 0075-platform-x86-mlx-platform-Extend-register-space-with.patch
-0076-platform-x86-mlx-platform-Add-new-system-E3597.patch
+0076-platform-x86-mlx-platform-Extend-FAN-and-LED-config-.patch
