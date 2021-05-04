@@ -18,7 +18,7 @@ x86-64-mlnx-mtq8200-r0:
       --stop=1
 
     kernel:
-      <<: *kernel-4-9
+      <<: *kernel-5-10
 
     args: >-
       nopat
