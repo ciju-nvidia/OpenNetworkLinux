@@ -1,24 +1,24 @@
-From 1fdbb45b4fc89d9c10b89455885563dc82d5edb6 Mon Sep 17 00:00:00 2001
+From 1cf16d20d912481227504c7bcbe2c60e02a21329 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Wed, 19 May 2021 17:07:33 +0300
+Date: Thu, 20 May 2021 01:44:15 +0300
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup fixes #1
 
-Signed-of-by: Vadim Pasternak <vadimp@nvidia.com>
+Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
  drivers/i2c/busses/i2c-mlxcpld.c                   |  13 +-
  drivers/net/ethernet/mellanox/mlxsw/core.c         |  28 ++-
  drivers/net/ethernet/mellanox/mlxsw/core.h         |  19 +-
  drivers/net/ethernet/mellanox/mlxsw/core_env.c     |  16 +-
- drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   |  25 ++-
- .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 238 +++++++++++++--------
+ drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   |  25 +--
+ .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 214 +++++++++++++--------
  drivers/net/ethernet/mellanox/mlxsw/core_thermal.c |  63 ++++--
  drivers/net/ethernet/mellanox/mlxsw/i2c.c          |   2 +-
- drivers/net/ethernet/mellanox/mlxsw/minimal.c      |  30 +--
- drivers/net/ethernet/mellanox/mlxsw/reg.h          | 177 +++++++++++----
- drivers/platform/mellanox/mlxreg-hotplug.c         |  13 +-
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c      |  24 +--
+ drivers/net/ethernet/mellanox/mlxsw/reg.h          | 177 +++++++++++++----
+ drivers/platform/mellanox/mlxreg-hotplug.c         |   8 +-
  drivers/platform/mellanox/mlxreg-lc.c              |   2 +-
  drivers/platform/x86/mlx-platform.c                |  25 ++-
- 13 files changed, 436 insertions(+), 215 deletions(-)
+ 13 files changed, 415 insertions(+), 201 deletions(-)
 
 diff --git a/drivers/i2c/busses/i2c-mlxcpld.c b/drivers/i2c/busses/i2c-mlxcpld.c
 index fa8cc0b71..e45d66ab6 100644
@@ -380,10 +380,10 @@ index 0f46125d6..d870d9e8d 100644
  				   GFP_KERNEL);
  	if (!hwmon->linecards)
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c b/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
-index 22db8b230..1f5d31991 100644
+index 22db8b230..1eb91f20b 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
-@@ -18,68 +18,118 @@ struct mlxsw_linecards_event_ops_item {
+@@ -18,68 +18,115 @@ struct mlxsw_linecards_event_ops_item {
  	void *priv;
  };
  
@@ -397,7 +397,7 @@ index 22db8b230..1f5d31991 100644
 -	char mddc_pl[MLXSW_REG_MDDC_LEN];
 +	struct mlxsw_linecards_event_ops_item *item;
 +	int err;
-+printk("%s(%d)\n", __func__, __LINE__);
++
 +	list_for_each_entry(item, &linecards->event_ops_list, list) {
 +		err = item->event_ops->got_provisioned(mlxsw_core,
 +						       linecard->slot_index,
@@ -425,7 +425,7 @@ index 22db8b230..1f5d31991 100644
 +				    struct mlxsw_linecard *linecard)
 +{
 +	struct mlxsw_linecards_event_ops_item *item;
-+printk("%s(%d)\n", __func__, __LINE__);
++
 +	list_for_each_entry(item, &linecards->event_ops_list, list)
 +		item->event_ops->got_unprovisioned(mlxsw_core,
 +						   linecard->slot_index,
@@ -439,7 +439,7 @@ index 22db8b230..1f5d31991 100644
  			     enum mlxsw_reg_mddq_card_type card_type)
  {
 +	int err;
-+printk("%s(%d)\n", __func__, __LINE__);
++
 +	err = mlxsw_linecard_provision_cbs_call(mlxsw_core, linecards,
 +						linecard);
 +	if (err)
@@ -453,24 +453,21 @@ index 22db8b230..1f5d31991 100644
 +					   struct mlxsw_linecards *linecards,
 +					   struct mlxsw_linecard *linecard)
 +{
-+printk("%s(%d)\n", __func__, __LINE__);
 +	linecard->provisioned = false;
 +	mlxsw_linecard_unprovision_cbs_call(mlxsw_core, linecards,
 +					    linecard);
-+}
-+
-+static int mlxsw_linecard_ready_set(struct mlxsw_core *mlxsw_core,
-+				    struct mlxsw_linecard *linecard)
-+{
-+printk("%s(%d)\n", __func__, __LINE__);
-+	linecard->ready = true;
-+	return 0;
  }
  
 -static void mlxsw_linecard_provision_clear(struct mlxsw_linecard *linecard)
-+static void mlxsw_linecard_ready_clear(struct mlxsw_linecard *linecard)
++static int mlxsw_linecard_ready_set(struct mlxsw_core *mlxsw_core,
++				    struct mlxsw_linecard *linecard)
  {
-+printk("%s(%d)\n", __func__, __LINE__);
++	linecard->ready = true;
++	return 0;
++}
++
++static void mlxsw_linecard_ready_clear(struct mlxsw_linecard *linecard)
++{
 +	linecard->ready = false;
  }
  
@@ -486,7 +483,7 @@ index 22db8b230..1f5d31991 100644
 +	linecard->active = true;
 +	linecard->hw_revision = hw_revision;
 +	linecard->ini_version = ini_version;
-+printk("%s(%d)\n", __func__, __LINE__);
++
  	list_for_each_entry(item, &linecards->event_ops_list, list)
  		item->event_ops->got_active(mlxsw_core, linecard->slot_index,
  					    linecard, item->priv);
@@ -533,7 +530,7 @@ index 22db8b230..1f5d31991 100644
  
  static int __mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
  					   struct mlxsw_linecards *linecards,
-@@ -88,18 +138,22 @@ static int __mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
+@@ -88,18 +135,20 @@ static int __mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
  					   bool process_provision_only)
  {
  	enum mlxsw_reg_mddq_card_type card_type;
@@ -556,17 +553,12 @@ index 22db8b230..1f5d31991 100644
 -					&minor_ini_file_version, &card_type);
 +					&hw_revision, &ini_version,
 +					&card_type);
-+	printk("%s from MDDQ prov %d, sr_valid %d, ready %d, active %d, hw_revision %u, ini_version %u\n",
-+	       __func__, provisioned, sr_valid, ready, active, hw_revision, ini_version);
  
  	if (linecard) {
  		if (slot_index != linecard->slot_index)
-@@ -109,63 +163,68 @@ static int __mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
- 			return -EINVAL;
+@@ -110,42 +159,47 @@ static int __mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
  		linecard = mlxsw_linecard_get(linecards, slot_index);
  	}
-+printk("%s(%d) slot %d %d\n", __func__, __LINE__, slot_index, linecard->slot_index);
-+	mutex_lock(&linecard->lock);
  
 -	if (linecard->provisioned != provisioned) {
 -		if (provisioned)
@@ -574,6 +566,8 @@ index 22db8b230..1f5d31991 100644
 -		else
 -			mlxsw_linecard_provision_clear(linecard);
 -		linecard->provisioned = provisioned;
++	mutex_lock(&linecard->lock);
++
 +	if (provisioned && linecard->provisioned != provisioned) {
 +		err = mlxsw_linecard_provision_set(mlxsw_core, linecards,
 +						   linecard, card_type);
@@ -613,7 +607,7 @@ index 22db8b230..1f5d31991 100644
 -			mlxsw_linecard_got_inactive(mlxsw_core,
 -						    linecards, linecard);
 -		linecard->active = active;
-+printk("%s(%d) slot %d active SW %d active FW %d process_provision_only %d\n", __func__, __LINE__, slot_index, linecard->active, active, process_provision_only);
++
 +	if (!process_provision_only && active && linecard->active != active)
 +		mlxsw_linecard_active_set(mlxsw_core, linecards, linecard,
 +					  hw_revision, ini_version);
@@ -631,7 +625,6 @@ index 22db8b230..1f5d31991 100644
 +out:
 +	mutex_unlock(&linecard->lock);
 +	if (tmp_delayed_mddq) {
-+printk("%s(%d) slot %d delay for ready 1500*3 usec\n", __func__, __LINE__, linecard->slot_index);
 +		mdelay(1500*3);
 +		mlxsw_linecard_status_get_and_process(mlxsw_core, linecards,
 +						      linecard, false);
@@ -643,12 +636,7 @@ index 22db8b230..1f5d31991 100644
  int mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
  				  const char *mddq_pl)
  {
- 	struct mlxsw_linecards *linecards = mlxsw_core_linecards(mlxsw_core);
--
-+printk("%s(%d)\n", __func__, __LINE__);
- 	return __mlxsw_linecard_status_process(mlxsw_core, linecards, NULL,
- 					       mddq_pl, false);
- }
+@@ -157,15 +211,14 @@ int mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
  EXPORT_SYMBOL(mlxsw_linecard_status_process);
  
  static int mlxsw_linecard_status_get_and_process(struct mlxsw_core *mlxsw_core,
@@ -659,21 +647,14 @@ index 22db8b230..1f5d31991 100644
 -	struct mlxsw_linecards *linecards = mlxsw_core_linecards(mlxsw_core);
  	char mddq_pl[MLXSW_REG_MDDQ_LEN];
  	int err;
--
+ 
 -	mlxsw_reg_mddq_pack(mddq_pl, linecard->slot_index, false,
 -			    MLXSW_REG_MDDQ_QUERY_TYPE_SLOT_INFO);
-+printk("%s(%d)\n", __func__, __LINE__);
 +	mlxsw_reg_mddq_slot_info_pack(mddq_pl, linecard->slot_index, false);
  	err = mlxsw_reg_query(mlxsw_core, MLXSW_REG(mddq), mddq_pl);
  	if (err)
  		return err;
-@@ -180,12 +239,13 @@ static int mlxsw_linecard_init(struct mlxsw_core *mlxsw_core,
- {
- 	struct mlxsw_linecard *linecard;
- 	int err;
--
-+printk("%s(%d)\n", __func__, __LINE__);
- 	linecard = mlxsw_linecard_get(linecards, slot_index);
+@@ -185,7 +238,8 @@ static int mlxsw_linecard_init(struct mlxsw_core *mlxsw_core,
  	linecard->slot_index = slot_index;
  	linecard->linecards = linecards;
  
@@ -683,7 +664,7 @@ index 22db8b230..1f5d31991 100644
  	if (err)
  		goto err_status_get_and_process;
  
-@@ -201,8 +261,7 @@ static int mlxsw_linecard_event_delivery_set(struct mlxsw_core *mlxsw_core,
+@@ -201,8 +255,7 @@ static int mlxsw_linecard_event_delivery_set(struct mlxsw_core *mlxsw_core,
  {
  	char mddq_pl[MLXSW_REG_MDDQ_LEN];
  
@@ -693,16 +674,7 @@ index 22db8b230..1f5d31991 100644
  	return mlxsw_reg_write(mlxsw_core, MLXSW_REG(mddq), mddq_pl);
  }
  
-@@ -212,7 +271,7 @@ static int mlxsw_linecard_post_init(struct mlxsw_core *mlxsw_core,
- {
- 	struct mlxsw_linecard *linecard;
- 	int err;
--
-+printk("%s(%d)\n", __func__, __LINE__);
- 	linecard = mlxsw_linecard_get(linecards, slot_index);
- 	linecard->slot_index = slot_index;
- 
-@@ -220,8 +279,8 @@ static int mlxsw_linecard_post_init(struct mlxsw_core *mlxsw_core,
+@@ -220,8 +273,8 @@ static int mlxsw_linecard_post_init(struct mlxsw_core *mlxsw_core,
  	if (err)
  		return err;
  
@@ -713,7 +685,7 @@ index 22db8b230..1f5d31991 100644
  	if (err)
  		goto err_status_get_and_process;
  
-@@ -252,6 +311,7 @@ static void mlxsw_linecard_fini(struct mlxsw_core *mlxsw_core,
+@@ -252,6 +305,7 @@ static void mlxsw_linecard_fini(struct mlxsw_core *mlxsw_core,
  }
  
  int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
@@ -721,29 +693,7 @@ index 22db8b230..1f5d31991 100644
  			 struct mlxsw_linecards **p_linecards)
  {
  	char mgpir_pl[MLXSW_REG_MGPIR_LEN];
-@@ -259,25 +319,27 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
- 	u8 slot_count;
- 	int err;
- 	int i;
--
-+printk("%s(%d)\n", __func__, __LINE__);
- 	mlxsw_reg_mgpir_pack(mgpir_pl, 0);
- 	err = mlxsw_reg_query(mlxsw_core, MLXSW_REG(mgpir), mgpir_pl);
- 	if (err)
- 		return err;
- 
- 	mlxsw_reg_mgpir_unpack(mgpir_pl, NULL, NULL, NULL,
--			       NULL, &slot_count, NULL);
-+			       NULL, &slot_count, NULL);printk("%s(%d) slot_count %d\n", __func__, __LINE__, slot_count);
- 	if (!slot_count) {
- 		*p_linecards = NULL;
- 		return 0;
- 	}
--
-+printk("%s(%d) slot_count %d\n", __func__, __LINE__, slot_count);
- 	linecards = kzalloc(struct_size(linecards, linecards, slot_count),
- 			    GFP_KERNEL);
- 	if (!linecards)
+@@ -278,6 +332,8 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
  		return -ENOMEM;
  	linecards->count = slot_count;
  	linecards->mlxsw_core = mlxsw_core;
@@ -752,7 +702,7 @@ index 22db8b230..1f5d31991 100644
  
  	for (i = 0; i < linecards->count; i++) {
  		err = mlxsw_linecard_init(mlxsw_core, linecards, i + 1);
-@@ -285,7 +347,6 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
+@@ -285,7 +341,6 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
  			goto err_linecard_init;
  	}
  
@@ -760,16 +710,7 @@ index 22db8b230..1f5d31991 100644
  	*p_linecards = linecards;
  
  	return 0;
-@@ -303,18 +364,18 @@ int mlxsw_linecards_post_init(struct mlxsw_core *mlxsw_core,
- {
- 	int err;
- 	int i;
--
-+printk("%s(%d)\n", __func__, __LINE__);
- 	if (!linecards)
- 		return 0;
--
-+printk("%s(%d) linecards->count %d\n", __func__, __LINE__, linecards->count);
+@@ -310,11 +365,11 @@ int mlxsw_linecards_post_init(struct mlxsw_core *mlxsw_core,
  	for (i = 0; i < linecards->count; i++) {
  		err = mlxsw_linecard_post_init(mlxsw_core, linecards, i + 1);
  		if (err)
@@ -783,7 +724,7 @@ index 22db8b230..1f5d31991 100644
  	for (i--; i >= 0; i--)
  		mlxsw_linecard_pre_fini(mlxsw_core, linecards, i + 1);
  
-@@ -344,6 +405,7 @@ void mlxsw_linecards_fini(struct mlxsw_core *mlxsw_core,
+@@ -344,6 +399,7 @@ void mlxsw_linecards_fini(struct mlxsw_core *mlxsw_core,
  	WARN_ON(!list_empty(&linecards->event_ops_list));
  	for (i = 0; i < linecards->count; i++)
  		mlxsw_linecard_fini(mlxsw_core, linecards, i + 1);
@@ -959,7 +900,7 @@ index 10754f704..baaa0ee3c 100644
  
  static int mlxsw_i2c_event_handler_register(struct mlxsw_i2c *mlxsw_i2c)
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index 604daaa18..3ed8b54b2 100644
+index 604daaa18..0508d54a7 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 @@ -167,7 +167,7 @@ mlxsw_m_port_create(struct mlxsw_m_area *mlxsw_m_area, u8 slot_index,
@@ -985,7 +926,7 @@ index 604daaa18..3ed8b54b2 100644
  		err = mlxsw_reg_query(mlxsw_m->core, MLXSW_REG(mddq), mddq_pl);
  		if (err)
  			dev_err(mlxsw_m->bus_info->dev, "Fail to query MDDQ register for slot %d\n",
-@@ -319,24 +320,25 @@ static void mlxsw_m_sys_event_handler(struct mlxsw_core *mlxsw_core)
+@@ -319,9 +320,9 @@ static void mlxsw_m_sys_event_handler(struct mlxsw_core *mlxsw_core)
  	}
  }
  
@@ -998,9 +939,8 @@ index 604daaa18..3ed8b54b2 100644
  {
  	struct mlxsw_m *mlxsw_m = priv;
  	struct mlxsw_m_area *mlxsw_m_area = mlxsw_m->linecards[slot_index - 1];
- 	int err;
--
-+printk("%s(%d)\n", __func__, __LINE__);
+@@ -329,14 +330,15 @@ mlxsw_m_got_ready(struct mlxsw_core *mlxsw_core, u8 slot_index,
+ 
  	err = mlxsw_m_ports_create(mlxsw_m_area, slot_index);
  	if (err) {
 -		dev_err(mlxsw_m->bus_info->dev, "Failed to create ports for line card at slot %d\n",
@@ -1018,7 +958,7 @@ index 604daaa18..3ed8b54b2 100644
  {
  	struct mlxsw_m *mlxsw_m = priv;
  	struct mlxsw_m_area *mlxsw_m_area = mlxsw_m->linecards[slot_index - 1];
-@@ -345,18 +347,18 @@ mlxsw_m_got_unready(struct mlxsw_core *mlxsw_core, u8 slot_index,
+@@ -345,8 +347,8 @@ mlxsw_m_got_unready(struct mlxsw_core *mlxsw_core, u8 slot_index,
  }
  
  static struct mlxsw_linecards_event_ops mlxsw_m_event_ops = {
@@ -1029,18 +969,6 @@ index 604daaa18..3ed8b54b2 100644
  };
  
  static int mlxsw_m_linecards_register(struct mlxsw_m *mlxsw_m)
- {
- 	struct mlxsw_linecards *linecards = mlxsw_core_linecards(mlxsw_m->core);
- 	int err;
--
-+printk("%s(%d)\n", __func__, __LINE__);
- 	if (!linecards || !linecards->count)
- 		return 0;
--
-+printk("%s(%d) linecards->count %d\n", __func__, __LINE__, linecards->count);
- 	mlxsw_m->linecards = kcalloc(linecards->count, sizeof(*mlxsw_m->linecards),
- 				     GFP_KERNEL);
- 	if (!mlxsw_m->linecards)
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/reg.h b/drivers/net/ethernet/mellanox/mlxsw/reg.h
 index bb2a1420d..4d059334b 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/reg.h
@@ -1329,18 +1257,10 @@ index bb2a1420d..4d059334b 100644
  }
  
 diff --git a/drivers/platform/mellanox/mlxreg-hotplug.c b/drivers/platform/mellanox/mlxreg-hotplug.c
-index 13a6a6811..22543b6bf 100644
+index 13a6a6811..43e5b5064 100644
 --- a/drivers/platform/mellanox/mlxreg-hotplug.c
 +++ b/drivers/platform/mellanox/mlxreg-hotplug.c
-@@ -152,6 +152,7 @@ static int mlxreg_hotplug_device_create(struct mlxreg_hotplug_priv_data *priv,
- 		data->hpdev.client = client;
- 		break;
- 	case MLXREG_HOTPLUG_DEVICE_PLATFORM_ACTION:
-+printk("%s(%d) %s\n", __func__, __LINE__, brdinfo->type);
- 		/* Export platform data to underlying device. */
- 		if (data->hpdev.brdinfo && data->hpdev.brdinfo->platform_data)
- 			mlxreg_hotplug_pdata_export(data->hpdev.brdinfo->platform_data,
-@@ -168,7 +169,7 @@ static int mlxreg_hotplug_device_create(struct mlxreg_hotplug_priv_data *priv,
+@@ -168,7 +168,7 @@ static int mlxreg_hotplug_device_create(struct mlxreg_hotplug_priv_data *priv,
  	default:
  		break;
  	}
@@ -1349,7 +1269,7 @@ index 13a6a6811..22543b6bf 100644
  	if (data->hpdev.user_handler)
  		return data->hpdev.user_handler(data->hpdev.handle, kind, 1);
  
-@@ -183,6 +184,9 @@ mlxreg_hotplug_device_destroy(struct mlxreg_hotplug_priv_data *priv,
+@@ -183,6 +183,9 @@ mlxreg_hotplug_device_destroy(struct mlxreg_hotplug_priv_data *priv,
  	/* Notify user by sending hwmon uevent. */
  	mlxreg_hotplug_udev_event_send(&priv->hwmon->kobj, data, false);
  
@@ -1359,7 +1279,7 @@ index 13a6a6811..22543b6bf 100644
  	switch (data->hpdev.action) {
  	case MLXREG_HOTPLUG_DEVICE_DEFAULT_ACTION:
  		if (data->hpdev.client) {
-@@ -202,9 +206,6 @@ mlxreg_hotplug_device_destroy(struct mlxreg_hotplug_priv_data *priv,
+@@ -202,9 +205,6 @@ mlxreg_hotplug_device_destroy(struct mlxreg_hotplug_priv_data *priv,
  	default:
  		break;
  	}
@@ -1369,24 +1289,6 @@ index 13a6a6811..22543b6bf 100644
  }
  
  static ssize_t mlxreg_hotplug_attr_show(struct device *dev,
-@@ -525,7 +526,7 @@ static void mlxreg_hotplug_work_handler(struct work_struct *work)
- 	ret = regmap_read(priv->regmap, pdata->cell, &regval);
- 	if (ret)
- 		goto out;
--
-+//printk("%s(%d) not_asserted %d cell 0x%08x regval 0x%08x\n", __func__, __LINE__, priv->not_asserted, pdata->cell, regval);
- 	regval &= pdata->mask;
- 	aggr_asserted = priv->aggr_cache ^ regval;
- 	priv->aggr_cache = regval;
-@@ -541,7 +542,7 @@ static void mlxreg_hotplug_work_handler(struct work_struct *work)
- 	}
- 	if (!aggr_asserted)
- 		goto unmask_event;
--
-+//printk("%s(%d)\n", __func__, __LINE__);
- 	/* Handle topology and health configuration changes. */
- 	for (i = 0; i < pdata->counter; i++, item++) {
- 		if (aggr_asserted & item->aggr_mask) {
 diff --git a/drivers/platform/mellanox/mlxreg-lc.c b/drivers/platform/mellanox/mlxreg-lc.c
 index 513cf4d35..162e90d1d 100644
 --- a/drivers/platform/mellanox/mlxreg-lc.c
