@@ -78,3 +78,4 @@ pinctrl-intel-backport-gpio-enable.patch
 0077-mlxsw-reg-Add-new-field-to-Management-General-Periph.patch
 0078-mlxsw-minimal-Add-support-for-setting-line-card-devi.patch
 0079-leds-mlxreg-Provide-conversion-for-hardware-LED-colo.patch
+0100-TMP-Bringup-fixes-1.patch
