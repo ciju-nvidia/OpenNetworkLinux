@@ -39,7 +39,7 @@ index b0ae4238d..d5a7cd5c1 100644
  	int err;
  
 -	err = mlxsw_env_module_temp_thresholds_get(core, tz->slot_index,
-+	if (!crit_temp) {
++	if (!emerg_temp) {
 +		err = mlxsw_env_module_temp_thresholds_get(core, tz->slot_index,
  						   tz->module,
  						   SFP_TEMP_HIGH_WARN,
