@@ -1,7 +1,7 @@
-From ce1681c9099aac79efbc6d50bf4b1c8ced1df45c Mon Sep 17 00:00:00 2001
+From 1bab6c37b2b003d073141d375669ce5d66e8fd7e Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Mon, 10 May 2021 21:14:03 +0300
-Subject: [PATCH 3/5] mlxsw: Support extended capability for reading
+Subject: [PATCH 3/3] mlxsw: Support extended capability for reading
  temperature
 
 Currently these thresholds used to be obtained from Management Cable
@@ -24,7 +24,7 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  1 file changed, 18 insertions(+), 11 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
-index b0ae4238d..d5a7cd5c1 100644
+index b0ae4238d..80515ac46 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 @@ -165,24 +165,26 @@ mlxsw_thermal_module_trips_reset(struct mlxsw_thermal_module *tz)
@@ -39,7 +39,7 @@ index b0ae4238d..d5a7cd5c1 100644
  	int err;
  
 -	err = mlxsw_env_module_temp_thresholds_get(core, tz->slot_index,
-+	if (!crit_temp) {
++	if (!emerg_temp) {
 +		err = mlxsw_env_module_temp_thresholds_get(core, tz->slot_index,
  						   tz->module,
  						   SFP_TEMP_HIGH_WARN,

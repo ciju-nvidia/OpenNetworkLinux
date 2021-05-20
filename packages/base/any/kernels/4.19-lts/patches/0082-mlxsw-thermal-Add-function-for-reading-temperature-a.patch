@@ -1,7 +1,7 @@
 From 729a89fcbd8c6eb83dcf025f2a59a1b4ebbf9bdf Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Mon, 10 May 2021 21:01:55 +0300
-Subject: [PATCH 2/5] mlxsw: thermal: Add function for reading temperature and
+Subject: [PATCH 2/3] mlxsw: thermal: Add function for reading temperature and
  thresholds
 
 Provide new function mlxsw_thermal_temp_and_thresholds_get() for
