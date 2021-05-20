@@ -74,7 +74,12 @@ pinctrl-intel-backport-gpio-enable.patch
 0073-mlxsw-core_hwmon-Add-line-card-support.patch
 0074-mlxsw-minimal-Add-support-line-card-ready-unready-ev.patch
 0075-platform-x86-mlx-platform-Extend-register-space-with.patch
-0076-platform-x86-mlx-platform-Extend-FAN-and-LED-config-.patch
+0076-mlxsw-core-Remove-critical-trip-point-from-thermal-z.patch
 0077-mlxsw-reg-Add-new-field-to-Management-General-Periph.patch
 0078-mlxsw-minimal-Add-support-for-setting-line-card-devi.patch
 0079-leds-mlxreg-Provide-conversion-for-hardware-LED-colo.patch
+0080-platform-x86-mlx-platform-Extend-FAN-and-LED-config-.patch
+0081-mlxsw-reg-Extend-MTMP-register-with-new-threshold-fi.patch
+0082-mlxsw-thermal-Add-function-for-reading-temperature-a.patch
+0083-mlxsw-Support-extended-capability-for-reading-temper.patch
+0084-debug-thermal-mtmp-mcia.patch

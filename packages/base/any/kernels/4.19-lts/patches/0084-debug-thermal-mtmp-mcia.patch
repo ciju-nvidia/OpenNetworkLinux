@@ -1,0 +1,29 @@
+From f29d249699193b19467851e3b35b0af78582efec Mon Sep 17 00:00:00 2001
+From: Mykola Kostenok <c_mykolak@nvidia.com>
+Date: Wed, 19 May 2021 16:47:10 +0000
+Subject: [PATCH 5/5] debug: thermal-mtmp-mcia
+
+Signed-off-by: Mykola Kostenok <c_mykolak@nvidia.com>
+---
+ drivers/net/ethernet/mellanox/mlxsw/core_thermal.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
+index d5a7cd5c1..9a0efc085 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
++++ b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
+@@ -184,6 +184,11 @@ mlxsw_thermal_module_trips_update(struct device *dev, struct mlxsw_core *core,
+ 						   &emerg_temp);
+ 		if (err)
+ 			return err;
++		dev_info(dev, "%s : Old method: Critical threshold %d, emergency threshold %d\n",
++			 tz->tzdev->type, crit_temp, emerg_temp);
++	} else {
++		dev_info(dev, "%s : New method: Critical threshold %d, emergency threshold %d\n",
++			 tz->tzdev->type, crit_temp, emerg_temp);
+ 	}
+ 
+ 	if (crit_temp > emerg_temp) {
+-- 
+2.20.1
+
