@@ -1,6 +1,6 @@
-From e258d044371611fc529548311220f3a541846a13 Mon Sep 17 00:00:00 2001
+From d1f2b23af7e5a828b8ab0de074a89004dbd12723 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Tue, 25 May 2021 18:44:54 +0300
+Date: Tue, 25 May 2021 21:28:08 +0300
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup fixes #1
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
@@ -23,7 +23,7 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  15 files changed, 661 insertions(+), 236 deletions(-)
 
 diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
-index 19490058b..c0f15245e 100644
+index 19490058b..08aed5912 100644
 --- a/drivers/hwmon/pmbus/mp2975.c
 +++ b/drivers/hwmon/pmbus/mp2975.c
 @@ -54,7 +54,8 @@
@@ -32,7 +32,7 @@ index 19490058b..c0f15245e 100644
  #define MP2975_RAIL2_FUNC	(PMBUS_HAVE_VOUT | PMBUS_HAVE_STATUS_VOUT | \
 -				 PMBUS_HAVE_IOUT | PMBUS_HAVE_STATUS_IOUT)
 +				 PMBUS_HAVE_IOUT | PMBUS_HAVE_STATUS_IOUT | \
-+				 PMBUS_HAVE_POUT | PMBUS_HAVE_STATUS_POUT)
++				 PMBUS_HAVE_POUT)
  
  struct mp2975_data {
  	struct pmbus_driver_info info;
