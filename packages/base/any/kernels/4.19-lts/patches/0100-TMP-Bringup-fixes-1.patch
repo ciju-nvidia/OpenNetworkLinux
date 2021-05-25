@@ -1,10 +1,11 @@
-From 800bf6d3d295fff7c6a5762d3948ccae00de5671 Mon Sep 17 00:00:00 2001
+From e258d044371611fc529548311220f3a541846a13 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Mon, 24 May 2021 23:22:38 +0300
+Date: Tue, 25 May 2021 18:44:54 +0300
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup fixes #1
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
+ drivers/hwmon/pmbus/mp2975.c                       |   3 +-
  drivers/i2c/busses/i2c-mlxcpld.c                   |  13 +-
  drivers/net/ethernet/mellanox/mlxsw/core.c         |  28 ++-
  drivers/net/ethernet/mellanox/mlxsw/core.h         |  19 +-
@@ -16,11 +17,25 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  drivers/net/ethernet/mellanox/mlxsw/minimal.c      |  24 +--
  drivers/net/ethernet/mellanox/mlxsw/reg.h          | 177 +++++++++++++----
  drivers/platform/mellanox/mlxreg-hotplug.c         |  15 +-
- drivers/platform/mellanox/mlxreg-lc.c              | 110 ++++++++---
+ drivers/platform/mellanox/mlxreg-lc.c              | 153 +++++++++++----
  drivers/platform/x86/mlx-platform.c                | 116 ++++++++++-
  include/linux/platform_data/mlxreg.h               |  19 ++
- 14 files changed, 622 insertions(+), 229 deletions(-)
+ 15 files changed, 661 insertions(+), 236 deletions(-)
 
+diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
+index 19490058b..c0f15245e 100644
+--- a/drivers/hwmon/pmbus/mp2975.c
++++ b/drivers/hwmon/pmbus/mp2975.c
+@@ -54,7 +54,8 @@
+ #define MP2975_PAGE_NUM		2
+ 
+ #define MP2975_RAIL2_FUNC	(PMBUS_HAVE_VOUT | PMBUS_HAVE_STATUS_VOUT | \
+-				 PMBUS_HAVE_IOUT | PMBUS_HAVE_STATUS_IOUT)
++				 PMBUS_HAVE_IOUT | PMBUS_HAVE_STATUS_IOUT | \
++				 PMBUS_HAVE_POUT | PMBUS_HAVE_STATUS_POUT)
+ 
+ struct mp2975_data {
+ 	struct pmbus_driver_info info;
 diff --git a/drivers/i2c/busses/i2c-mlxcpld.c b/drivers/i2c/busses/i2c-mlxcpld.c
 index fa8cc0b71..e45d66ab6 100644
 --- a/drivers/i2c/busses/i2c-mlxcpld.c
@@ -1303,7 +1318,7 @@ index bb2a1420d..4d059334b 100644
  }
  
 diff --git a/drivers/platform/mellanox/mlxreg-hotplug.c b/drivers/platform/mellanox/mlxreg-hotplug.c
-index 13a6a6811..0f4458072 100644
+index 13a6a6811..33c15027a 100644
 --- a/drivers/platform/mellanox/mlxreg-hotplug.c
 +++ b/drivers/platform/mellanox/mlxreg-hotplug.c
 @@ -121,7 +121,7 @@ static int mlxreg_hotplug_device_create(struct mlxreg_hotplug_priv_data *priv,
@@ -1311,7 +1326,7 @@ index 13a6a6811..0f4458072 100644
  	if (data->hpdev.nr < 0)
  		return 0;
 -
-+dev_info(priv->dev, "label %s action %d kind %d\n", __func__, data->label, data->hpdev.action, kind);
++dev_info(priv->dev, "label %s action %d kind %d\n", data->label, data->hpdev.action, kind);
  	pdata = dev_get_platdata(&priv->pdev->dev);
  	switch (data->hpdev.action) {
  	case MLXREG_HOTPLUG_DEVICE_DEFAULT_ACTION:
@@ -1357,26 +1372,52 @@ index 13a6a6811..0f4458072 100644
  
  static ssize_t mlxreg_hotplug_attr_show(struct device *dev,
 diff --git a/drivers/platform/mellanox/mlxreg-lc.c b/drivers/platform/mellanox/mlxreg-lc.c
-index 513cf4d35..40f52014a 100644
+index 513cf4d35..2eeb0388e 100644
 --- a/drivers/platform/mellanox/mlxreg-lc.c
 +++ b/drivers/platform/mellanox/mlxreg-lc.c
-@@ -27,11 +27,11 @@
+@@ -27,11 +27,7 @@
  #define MLXREG_LC_REG_FPGA1_MVER_OFFSET		0x25df
  #define MLXREG_LC_REG_MAX_POWER_OFFSET		0x25f1
  #define MLXREG_LC_REG_CONFIG_OFFSET		0x25fb
 -#define MLXREG_LC_REG_MAX			0x2600
-+#define MLXREG_LC_REG_MAX			0x3fff
- 
+-
 -#define MLXREG_LC_SYNCED	BIT(0)
 -#define MLXREG_LC_READY		BIT(1)
 -#define MLXREG_LC_ENABLE	(MLXREG_LC_SYNCED | MLXREG_LC_READY)
-+#define MLXREG_LC_INITIALIZED	BIT(0)
-+#define MLXREG_LC_POWERED	BIT(1)
-+#define MLXREG_LC_SYNCED	BIT(2)
++#define MLXREG_LC_REG_MAX			0x3fff
  
  /**
   * enum mlxreg_lc_type - line cards types
-@@ -143,6 +143,7 @@ static const struct regmap_config mlxreg_lc_regmap_conf = {
+@@ -42,6 +38,19 @@ enum mlxreg_lc_type {
+ 	MLXREG_LC_SN4800_C16 = 0x0000,
+ };
+ 
++/**
++ * enum mlxreg_lc_state - line cards state
++ *
++ * @MLXREG_LC_INITIALIZED: line card is initialized;
++ * @MLXREG_LC_POWERD: line card is powered;
++ * @MLXREG_LC_SYNCED: line card is syncronized between hardware and firmware;
++ */
++enum mlxreg_lc_state {
++	MLXREG_LC_INITIALIZED = BIT(0),
++	MLXREG_LC_POWERED = BIT(1),
++	MLXREG_LC_SYNCED = BIT(2),
++};
++
+ /* mlxreg_lc - device private data
+  * @dev: platform device;
+  * @lock: line card lock;
+@@ -76,7 +85,7 @@ struct mlxreg_lc {
+ 	int aux_devs_num;
+ 	struct mlxreg_hotplug_device *main_devs;
+ 	int main_devs_num;
+-	u8 state;
++	enum mlxreg_lc_state state;
+ };
+ 
+ static bool mlxreg_lc_writeable_reg(struct device *dev, unsigned int reg)
+@@ -143,6 +152,7 @@ static const struct regmap_config mlxreg_lc_regmap_conf = {
  	.val_bits = 8,
  	.max_register = MLXREG_LC_REG_MAX,
  	.cache_type = REGCACHE_FLAT,
@@ -1384,12 +1425,73 @@ index 513cf4d35..40f52014a 100644
  	.writeable_reg = mlxreg_lc_writeable_reg,
  	.readable_reg = mlxreg_lc_readable_reg,
  	.volatile_reg = mlxreg_lc_volatile_reg,
-@@ -530,34 +531,52 @@ static int mlxreg_lc_event_handler(void *handle, enum mlxreg_hotplug_kind kind,
+@@ -451,16 +461,25 @@ static int mlxreg_lc_power_on_off(struct mlxreg_lc *mlxreg_lc, u8 action)
+ 	u32 regval;
+ 	int err;
+ 
++	mutex_lock(&mlxreg_lc->lock);
++
+ 	err = regmap_read(mlxreg_lc->par_regmap, mlxreg_lc->data->reg_pwr, &regval);
+ 	if (err)
+-		return err;
++		goto regmap_read_fail;
+ 
+ 	if (action)
+ 		regval |= BIT(mlxreg_lc->data->slot);
+ 	else
+ 		regval &= ~BIT(mlxreg_lc->data->slot);
++#if 0
++	err = regmap_write(mlxreg_lc->par_regmap, mlxreg_lc->data->reg_pwr, regval);
++#else
++	err = 0;
++#endif
++regmap_read_fail:
++	mutex_unlock(&mlxreg_lc->lock);
+ 
+-	return regmap_write(mlxreg_lc->par_regmap, mlxreg_lc->data->reg_pwr, regval);
++	return err;
+ }
+ 
+ static int mlxreg_lc_enable_disable(struct mlxreg_lc *mlxreg_lc, bool action)
+@@ -486,8 +505,11 @@ static int mlxreg_lc_enable_disable(struct mlxreg_lc *mlxreg_lc, bool action)
+ 		regval |= BIT(mlxreg_lc->data->slot);
+ 	else
+ 		regval &= ~BIT(mlxreg_lc->data->slot);
+-
++#if 0
+ 	err = regmap_write(mlxreg_lc->par_regmap, mlxreg_lc->data->reg_ena, regval);
++#else
++	err = 0;
++#endif
+ 
+ regmap_read_fail:
+ 	mutex_unlock(&mlxreg_lc->lock);
+@@ -521,6 +543,19 @@ mlxreg_lc_sn4800_c16_config_init(struct mlxreg_lc *mlxreg_lc, void *regmap,
+ 	return 0;
+ }
+ 
++static void
++mlxreg_lc_state_update(struct mlxreg_lc *mlxreg_lc, enum mlxreg_lc_state state, u8 action)
++{
++	mutex_lock(&mlxreg_lc->lock);
++
++	if (action)
++		mlxreg_lc->state |= state;
++	else
++		mlxreg_lc->state &= ~state;
++
++	mutex_unlock(&mlxreg_lc->lock);
++}
++
+ /*
+  * Callback is to be called from mlxreg-hotplug driver to notify about line card about received
+  * event.
+@@ -530,34 +565,48 @@ static int mlxreg_lc_event_handler(void *handle, enum mlxreg_hotplug_kind kind,
  	struct mlxreg_lc *mlxreg_lc = handle;
  	int err = 0;
  
-+	dev_info(mlxreg_lc->dev, "%s state %d event kind %d action %d\n",
-+		 mlxreg_lc->data->label, mlxreg_lc->state, kind, action);
++	dev_info(mlxreg_lc->dev, "linecard#%d state %d event kind %d action %d\n",
++		 mlxreg_lc->data->slot, mlxreg_lc->state, kind, action);
 +
 +	if (!(mlxreg_lc->state & MLXREG_LC_INITIALIZED))
 +		return 0;
@@ -1397,41 +1499,38 @@ index 513cf4d35..40f52014a 100644
  	switch (kind) {
 -	case MLXREG_HOTPLUG_LC_VERIFIED:
 -		err = mlxreg_lc_power_on_off(mlxreg_lc, action);
--		break;
--	case MLXREG_HOTPLUG_LC_POWERED:
--		if (action)
--			err = mlxreg_lc_create_static_devices(mlxreg_lc, mlxreg_lc->aux_devs,
--							      mlxreg_lc->main_devs_num);
--		else
--			mlxreg_lc_destroy_static_devices(mlxreg_lc, mlxreg_lc->aux_devs,
--							 mlxreg_lc->main_devs_num);
--		break;
- 	case MLXREG_HOTPLUG_LC_SYNCED:
++	case MLXREG_HOTPLUG_LC_SYNCED:
 +		/*
 +		 * Synchronization event – hardware and firmware are synchronized. Power on/off
 +		 * line card – to allow/disallow main power source.
 +		 */
- 		if (action)
- 			mlxreg_lc->state |= MLXREG_LC_SYNCED;
- 		else
- 			mlxreg_lc->state &= ~MLXREG_LC_SYNCED;
--		err = mlxreg_lc_enable_disable(mlxreg_lc, mlxreg_lc->state == MLXREG_LC_ENABLE);
++		mlxreg_lc_state_update(mlxreg_lc, MLXREG_LC_SYNCED, action);
 +		err = mlxreg_lc_power_on_off(mlxreg_lc, !!action);
-+		break;
-+	case MLXREG_HOTPLUG_LC_POWERED:
+ 		break;
+ 	case MLXREG_HOTPLUG_LC_POWERED:
+-		if (action)
+-			err = mlxreg_lc_create_static_devices(mlxreg_lc, mlxreg_lc->aux_devs,
 +		/* Power event – attach or de-attach line card device feeding by the main power. */
 +		if (action) {
 +			/* Skip if line card is already powered. */
 +			if (mlxreg_lc->state & MLXREG_LC_POWERED)
 +				return 0;
 +			err = mlxreg_lc_create_static_devices(mlxreg_lc, mlxreg_lc->main_devs,
-+							      mlxreg_lc->main_devs_num);
-+			mlxreg_lc->state |= MLXREG_LC_POWERED;
+ 							      mlxreg_lc->main_devs_num);
+-		else
+-			mlxreg_lc_destroy_static_devices(mlxreg_lc, mlxreg_lc->aux_devs,
 +		} else {
 +			mlxreg_lc_destroy_static_devices(mlxreg_lc, mlxreg_lc->main_devs,
-+							 mlxreg_lc->main_devs_num);
-+			mlxreg_lc->state &= ~MLXREG_LC_POWERED;
+ 							 mlxreg_lc->main_devs_num);
+-		break;
+-	case MLXREG_HOTPLUG_LC_SYNCED:
+-		if (action)
+-			mlxreg_lc->state |= MLXREG_LC_SYNCED;
+-		else
+-			mlxreg_lc->state &= ~MLXREG_LC_SYNCED;
+-		err = mlxreg_lc_enable_disable(mlxreg_lc, mlxreg_lc->state == MLXREG_LC_ENABLE);
 +		}
++		mlxreg_lc_state_update(mlxreg_lc, MLXREG_LC_POWERED, action);
  		break;
  	case MLXREG_HOTPLUG_LC_READY:
 -		if (action)
@@ -1449,13 +1548,13 @@ index 513cf4d35..40f52014a 100644
 -		err = mlxreg_lc_power_on_off(mlxreg_lc, !action);
 +		/* Thermal shutdown event – power off line card. */
 +		if (action) {
-+			mlxreg_lc->state &= ~MLXREG_LC_POWERED;
++			mlxreg_lc_state_update(mlxreg_lc, MLXREG_LC_POWERED, 0);
 +			err = mlxreg_lc_power_on_off(mlxreg_lc, 0);
 +		}
  		break;
  	default:
  		break;
-@@ -587,6 +606,8 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
+@@ -587,6 +636,8 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
  
  	err = mlxreg_lc_create_static_devices(mlxreg_lc, mlxreg_lc->aux_devs,
  					      mlxreg_lc->aux_devs_num);
@@ -1464,7 +1563,7 @@ index 513cf4d35..40f52014a 100644
  
  	/* Update I2C devices feeding by main power. */
  	main_dev = mlxreg_lc->main_devs;
-@@ -595,17 +616,48 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
+@@ -595,17 +646,49 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
  		main_dev->nr = adapters[main_dev->nr]->nr;
  	}
  
@@ -1481,8 +1580,8 @@ index 513cf4d35..40f52014a 100644
 +		if (err)
 +			goto mlxreg_lc_create_static_devices_failed;
 +
-+		mlxreg_lc->state |= MLXREG_LC_POWERED;
-+dev_info(mlxreg_lc->dev, "label %s off 0x%08x regval 0x%08x mask 0x%08x state %d\n", mlxreg_lc->data->label, mlxreg_lc->data->reg_prsnt, regval, mlxreg_lc->data->mask, mlxreg_lc->state);
++		mlxreg_lc_state_update(mlxreg_lc, MLXREG_LC_POWERED, 1);
++dev_info(mlxreg_lc->dev, "linecard#%d off 0x%08x regval 0x%08x mask 0x%08x state %d\n", mlxreg_lc->data->slot, mlxreg_lc->data->reg_prsnt, regval, mlxreg_lc->data->mask, mlxreg_lc->state);
 +	}
 +
 +	/* Verify if line card is synchronized. */
@@ -1491,16 +1590,17 @@ index 513cf4d35..40f52014a 100644
 +		goto mlxreg_lc_regmap_read_sync_fail;
 +
 +	/* Power on line card if necessary. */
-+	if (regval & mlxreg_lc->data->mask && !(mlxreg_lc->state & MLXREG_LC_SYNCED)) {
++	if (regval & mlxreg_lc->data->mask && mlxreg_lc->state & MLXREG_LC_SYNCED) {
 +		err = mlxreg_lc_power_on_off(mlxreg_lc, 1);
 +		if (err)
 +			goto mlxreg_lc_regmap_power_on_off_fail;
 +
 +		mlxreg_lc->state |= MLXREG_LC_SYNCED;
-+dev_info(mlxreg_lc->dev, "label %s off 0x%08x regval 0x%08x mask 0x%08x state %d\n", mlxreg_lc->data->label, mlxreg_lc->data->reg_sync, regval, mlxreg_lc->data->mask, mlxreg_lc->state);
++		mlxreg_lc_state_update(mlxreg_lc, MLXREG_LC_SYNCED, 1);
++dev_info(mlxreg_lc->dev, "linecard#%d off 0x%08x regval 0x%08x mask 0x%08x state %d\n", mlxreg_lc->data->slot, mlxreg_lc->data->reg_sync, regval, mlxreg_lc->data->mask, mlxreg_lc->state);
 +	}
 +
-+	mlxreg_lc->state |= MLXREG_LC_INITIALIZED;
++	mlxreg_lc_state_update(mlxreg_lc, MLXREG_LC_INITIALIZED, 1);
  
  	return 0;
  
@@ -1516,7 +1616,7 @@ index 513cf4d35..40f52014a 100644
  	return err;
  }
  
-@@ -710,8 +762,11 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
+@@ -710,8 +793,11 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
  		return -ENOMEM;
  
  	mutex_init(&mlxreg_lc->lock);
@@ -1530,7 +1630,7 @@ index 513cf4d35..40f52014a 100644
  	data->hpdev.adapter = i2c_get_adapter(data->hpdev.nr);
  	if (!data->hpdev.adapter) {
  		dev_err(&pdev->dev, "Failed to get adapter for bus %d\n",
-@@ -755,6 +810,7 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
+@@ -755,6 +841,7 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
  	par_pdata = data->hpdev.brdinfo->platform_data;
  	mlxreg_lc->par_regmap = par_pdata->regmap;
  	mlxreg_lc->data = data;
