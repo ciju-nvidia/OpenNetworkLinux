@@ -1,7 +1,7 @@
-From ffcafd460bb843fb99cdb19cc43ba7fa4b0564a6 Mon Sep 17 00:00:00 2001
+From 617af1d8f8a53b8a4b9393f293f3d78f826174e5 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Wed, 26 May 2021 00:14:26 +0300
-Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup fixes #1
+Date: Wed, 26 May 2021 21:34:21 +0300
+Subject: [PATCH backport 4.19 1/1] TMP: Bringup fixes #1
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
@@ -14,13 +14,13 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 214 +++++++++++++--------
  drivers/net/ethernet/mellanox/mlxsw/core_thermal.c |  63 ++++--
  drivers/net/ethernet/mellanox/mlxsw/i2c.c          |  12 +-
- drivers/net/ethernet/mellanox/mlxsw/minimal.c      |  46 +++--
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c      |  54 ++++--
  drivers/net/ethernet/mellanox/mlxsw/reg.h          | 177 +++++++++++++----
  drivers/platform/mellanox/mlxreg-hotplug.c         |  15 +-
  drivers/platform/mellanox/mlxreg-lc.c              | 153 +++++++++++----
  drivers/platform/x86/mlx-platform.c                | 116 ++++++++++-
  include/linux/platform_data/mlxreg.h               |  19 ++
- 15 files changed, 678 insertions(+), 241 deletions(-)
+ 15 files changed, 686 insertions(+), 241 deletions(-)
 
 diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
 index 19490058b..08aed5912 100644
@@ -961,7 +961,7 @@ index 10754f704..97bfe640c 100644
  	mlxsw_core_bus_device_unregister(mlxsw_i2c->core, false);
  	mutex_destroy(&mlxsw_i2c->cmd.lock);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index 604daaa18..66060cf56 100644
+index 604daaa18..5106fc880 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 @@ -167,7 +167,7 @@ mlxsw_m_port_create(struct mlxsw_m_area *mlxsw_m_area, u8 slot_index,
@@ -982,7 +982,17 @@ index 604daaa18..66060cf56 100644
  	if (!mlxsw_m_area->max_ports)
  		return 0;
  
-@@ -306,10 +306,11 @@ static void mlxsw_m_sys_event_handler(struct mlxsw_core *mlxsw_core)
+@@ -292,6 +292,9 @@ static void mlxsw_m_ports_remove(struct mlxsw_m_area *mlxsw_m_area)
+ {
+ 	int i;
+ 
++	if (!mlxsw_m_area->max_ports)
++		return;
++
+ 	for (i = 0; i < mlxsw_m_area->max_ports; i++)
+ 		mlxsw_m_port_remove(mlxsw_m_area, mlxsw_m_area->module_to_port[i]);
+ 
+@@ -306,10 +309,11 @@ static void mlxsw_m_sys_event_handler(struct mlxsw_core *mlxsw_core)
  	char mddq_pl[MLXSW_REG_MDDQ_LEN];
  	int i, err;
  
@@ -996,7 +1006,7 @@ index 604daaa18..66060cf56 100644
  		err = mlxsw_reg_query(mlxsw_m->core, MLXSW_REG(mddq), mddq_pl);
  		if (err)
  			dev_err(mlxsw_m->bus_info->dev, "Fail to query MDDQ register for slot %d\n",
-@@ -319,34 +320,47 @@ static void mlxsw_m_sys_event_handler(struct mlxsw_core *mlxsw_core)
+@@ -319,34 +323,52 @@ static void mlxsw_m_sys_event_handler(struct mlxsw_core *mlxsw_core)
  	}
  }
  
@@ -1025,8 +1035,13 @@ index 604daaa18..66060cf56 100644
 +		dev_err(mlxsw_m->bus_info->dev, "Failed to set line card at slot %d\n",
  			slot_index);
 +		goto mlxsw_m_ports_create_fail;
++	}
++
++	/* Rollback if ports are not found on line card. */
++	if (!lc->max_ports) {
++		err = -ENODEV;
++		goto mlxsw_m_ports_create_fail;
  	}
-+	return err;
 +
 +mlxsw_m_ports_create_fail:
 +	kfree(lc);
