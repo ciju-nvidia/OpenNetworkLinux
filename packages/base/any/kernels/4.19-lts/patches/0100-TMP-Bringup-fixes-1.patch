@@ -1,6 +1,6 @@
-From 7def6e73ce2698992c1e0fd67091cfa5d2d6a6a4 Mon Sep 17 00:00:00 2001
+From e0347f85788eb4c13b5678adf79433a7952fb68d Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Mon, 31 May 2021 08:34:35 +0300
+Date: Tue, 1 Jun 2021 18:46:55 +0300
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup fixes #1
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
@@ -11,16 +11,16 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  drivers/net/ethernet/mellanox/mlxsw/core.h         |  20 +-
  drivers/net/ethernet/mellanox/mlxsw/core_env.c     |  16 +-
  drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   |  25 ++-
- .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 247 +++++++++++++--------
+ .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 248 +++++++++++++--------
  drivers/net/ethernet/mellanox/mlxsw/core_thermal.c |  63 ++++--
  drivers/net/ethernet/mellanox/mlxsw/i2c.c          |  12 +-
  drivers/net/ethernet/mellanox/mlxsw/minimal.c      |  64 ++++--
  drivers/net/ethernet/mellanox/mlxsw/reg.h          | 177 +++++++++++----
  drivers/platform/mellanox/mlxreg-hotplug.c         |  15 +-
- drivers/platform/mellanox/mlxreg-lc.c              | 153 ++++++++++---
+ drivers/platform/mellanox/mlxreg-lc.c              | 156 ++++++++++---
  drivers/platform/x86/mlx-platform.c                | 116 +++++++++-
  include/linux/platform_data/mlxreg.h               |  19 ++
- 15 files changed, 717 insertions(+), 254 deletions(-)
+ 15 files changed, 721 insertions(+), 254 deletions(-)
 
 diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
 index 19490058b..08aed5912 100644
@@ -397,7 +397,7 @@ index 0f46125d6..d870d9e8d 100644
  				   GFP_KERNEL);
  	if (!hwmon->linecards)
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c b/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
-index 22db8b230..f80a7f7aa 100644
+index 22db8b230..987edce15 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
 @@ -1,5 +1,5 @@
@@ -407,7 +407,7 @@ index 22db8b230..f80a7f7aa 100644
  
  #include <linux/kernel.h>
  #include <linux/module.h>
-@@ -18,88 +18,147 @@ struct mlxsw_linecards_event_ops_item {
+@@ -18,88 +18,148 @@ struct mlxsw_linecards_event_ops_item {
  	void *priv;
  };
  
@@ -590,12 +590,13 @@ index 22db8b230..f80a7f7aa 100644
 -					&minor_ini_file_version, &card_type);
 +					&hw_revision, &ini_version,
 +					&card_type);
-+	printk("%s delayed: %s, lc%u, prov %d, sr_valid %d, ready %d, active %d, hw_revision %u, ini_version %u\n",
-+	       __func__, tmp_delayed ? "yes": "no", slot_index, provisioned, sr_valid, ready, active, hw_revision, ini_version);
++	printk("%s delayed: %s, lc%u, prov %d, sr_valid %d, ready %d, active %d, hw_revision %u, ini_version %u provision_only %d\n",
++	       __func__, tmp_delayed ? "yes": "no", slot_index, provisioned, sr_valid, ready, active, hw_revision, ini_version, process_provision_only);
++	printk("%s linecard->provisioned %d linecard->ready %d linecard->active %d\n",__func__, linecard->provisioned, linecard->ready, linecard->active);
  
  	if (linecard) {
  		if (slot_index != linecard->slot_index)
-@@ -110,68 +169,76 @@ static int __mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
+@@ -110,68 +170,76 @@ static int __mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
  		linecard = mlxsw_linecard_get(linecards, slot_index);
  	}
  
@@ -711,7 +712,7 @@ index 22db8b230..f80a7f7aa 100644
  }
  
  static int mlxsw_linecard_init(struct mlxsw_core *mlxsw_core,
-@@ -184,8 +251,10 @@ static int mlxsw_linecard_init(struct mlxsw_core *mlxsw_core,
+@@ -184,8 +252,10 @@ static int mlxsw_linecard_init(struct mlxsw_core *mlxsw_core,
  	linecard = mlxsw_linecard_get(linecards, slot_index);
  	linecard->slot_index = slot_index;
  	linecard->linecards = linecards;
@@ -723,7 +724,7 @@ index 22db8b230..f80a7f7aa 100644
  	if (err)
  		goto err_status_get_and_process;
  
-@@ -201,8 +270,7 @@ static int mlxsw_linecard_event_delivery_set(struct mlxsw_core *mlxsw_core,
+@@ -201,8 +271,7 @@ static int mlxsw_linecard_event_delivery_set(struct mlxsw_core *mlxsw_core,
  {
  	char mddq_pl[MLXSW_REG_MDDQ_LEN];
  
@@ -733,7 +734,7 @@ index 22db8b230..f80a7f7aa 100644
  	return mlxsw_reg_write(mlxsw_core, MLXSW_REG(mddq), mddq_pl);
  }
  
-@@ -220,8 +288,8 @@ static int mlxsw_linecard_post_init(struct mlxsw_core *mlxsw_core,
+@@ -220,8 +289,8 @@ static int mlxsw_linecard_post_init(struct mlxsw_core *mlxsw_core,
  	if (err)
  		return err;
  
@@ -744,7 +745,7 @@ index 22db8b230..f80a7f7aa 100644
  	if (err)
  		goto err_status_get_and_process;
  
-@@ -252,6 +320,7 @@ static void mlxsw_linecard_fini(struct mlxsw_core *mlxsw_core,
+@@ -252,6 +321,7 @@ static void mlxsw_linecard_fini(struct mlxsw_core *mlxsw_core,
  }
  
  int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
@@ -752,7 +753,7 @@ index 22db8b230..f80a7f7aa 100644
  			 struct mlxsw_linecards **p_linecards)
  {
  	char mgpir_pl[MLXSW_REG_MGPIR_LEN];
-@@ -278,6 +347,8 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
+@@ -278,6 +348,8 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
  		return -ENOMEM;
  	linecards->count = slot_count;
  	linecards->mlxsw_core = mlxsw_core;
@@ -761,7 +762,7 @@ index 22db8b230..f80a7f7aa 100644
  
  	for (i = 0; i < linecards->count; i++) {
  		err = mlxsw_linecard_init(mlxsw_core, linecards, i + 1);
-@@ -285,7 +356,6 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
+@@ -285,7 +357,6 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
  			goto err_linecard_init;
  	}
  
@@ -769,7 +770,7 @@ index 22db8b230..f80a7f7aa 100644
  	*p_linecards = linecards;
  
  	return 0;
-@@ -310,11 +380,11 @@ int mlxsw_linecards_post_init(struct mlxsw_core *mlxsw_core,
+@@ -310,11 +381,11 @@ int mlxsw_linecards_post_init(struct mlxsw_core *mlxsw_core,
  	for (i = 0; i < linecards->count; i++) {
  		err = mlxsw_linecard_post_init(mlxsw_core, linecards, i + 1);
  		if (err)
@@ -783,7 +784,7 @@ index 22db8b230..f80a7f7aa 100644
  	for (i--; i >= 0; i--)
  		mlxsw_linecard_pre_fini(mlxsw_core, linecards, i + 1);
  
-@@ -344,6 +414,7 @@ void mlxsw_linecards_fini(struct mlxsw_core *mlxsw_core,
+@@ -344,6 +415,7 @@ void mlxsw_linecards_fini(struct mlxsw_core *mlxsw_core,
  	WARN_ON(!list_empty(&linecards->event_ops_list));
  	for (i = 0; i < linecards->count; i++)
  		mlxsw_linecard_fini(mlxsw_core, linecards, i + 1);
@@ -1473,7 +1474,7 @@ index 13a6a6811..33c15027a 100644
  
  static ssize_t mlxreg_hotplug_attr_show(struct device *dev,
 diff --git a/drivers/platform/mellanox/mlxreg-lc.c b/drivers/platform/mellanox/mlxreg-lc.c
-index 513cf4d35..2eeb0388e 100644
+index 513cf4d35..6a0cb89a7 100644
 --- a/drivers/platform/mellanox/mlxreg-lc.c
 +++ b/drivers/platform/mellanox/mlxreg-lc.c
 @@ -27,11 +27,7 @@
@@ -1587,7 +1588,7 @@ index 513cf4d35..2eeb0388e 100644
  /*
   * Callback is to be called from mlxreg-hotplug driver to notify about line card about received
   * event.
-@@ -530,34 +565,48 @@ static int mlxreg_lc_event_handler(void *handle, enum mlxreg_hotplug_kind kind,
+@@ -530,34 +565,51 @@ static int mlxreg_lc_event_handler(void *handle, enum mlxreg_hotplug_kind kind,
  	struct mlxreg_lc *mlxreg_lc = handle;
  	int err = 0;
  
@@ -1606,6 +1607,9 @@ index 513cf4d35..2eeb0388e 100644
 +		 * line card – to allow/disallow main power source.
 +		 */
 +		mlxreg_lc_state_update(mlxreg_lc, MLXREG_LC_SYNCED, action);
++		/* Skip if line card is already powered. */
++		if (mlxreg_lc->state & MLXREG_LC_POWERED && action)
++			return 0;
 +		err = mlxreg_lc_power_on_off(mlxreg_lc, !!action);
  		break;
  	case MLXREG_HOTPLUG_LC_POWERED:
@@ -1655,7 +1659,7 @@ index 513cf4d35..2eeb0388e 100644
  		break;
  	default:
  		break;
-@@ -587,6 +636,8 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
+@@ -587,6 +639,8 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
  
  	err = mlxreg_lc_create_static_devices(mlxreg_lc, mlxreg_lc->aux_devs,
  					      mlxreg_lc->aux_devs_num);
@@ -1664,7 +1668,7 @@ index 513cf4d35..2eeb0388e 100644
  
  	/* Update I2C devices feeding by main power. */
  	main_dev = mlxreg_lc->main_devs;
-@@ -595,17 +646,49 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
+@@ -595,17 +649,49 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
  		main_dev->nr = adapters[main_dev->nr]->nr;
  	}
  
@@ -1717,7 +1721,7 @@ index 513cf4d35..2eeb0388e 100644
  	return err;
  }
  
-@@ -710,8 +793,11 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
+@@ -710,8 +796,11 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
  		return -ENOMEM;
  
  	mutex_init(&mlxreg_lc->lock);
@@ -1731,7 +1735,7 @@ index 513cf4d35..2eeb0388e 100644
  	data->hpdev.adapter = i2c_get_adapter(data->hpdev.nr);
  	if (!data->hpdev.adapter) {
  		dev_err(&pdev->dev, "Failed to get adapter for bus %d\n",
-@@ -755,6 +841,7 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
+@@ -755,6 +844,7 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
  	par_pdata = data->hpdev.brdinfo->platform_data;
  	mlxreg_lc->par_regmap = par_pdata->regmap;
  	mlxreg_lc->data = data;
