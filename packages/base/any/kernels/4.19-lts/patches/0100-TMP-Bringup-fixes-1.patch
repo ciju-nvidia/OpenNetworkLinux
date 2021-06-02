@@ -1,6 +1,6 @@
-From 70a498df6c1c2061afb04f71b055826b81549144 Mon Sep 17 00:00:00 2001
+From 79738083fb1721abde4216fca9b75d9fed9c8335 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Tue, 1 Jun 2021 20:46:32 +0300
+Date: Wed, 2 Jun 2021 09:05:59 +0300
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup fixes #1
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
@@ -17,10 +17,10 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  drivers/net/ethernet/mellanox/mlxsw/minimal.c      |  64 ++++--
  drivers/net/ethernet/mellanox/mlxsw/reg.h          | 177 +++++++++++----
  drivers/platform/mellanox/mlxreg-hotplug.c         |  15 +-
- drivers/platform/mellanox/mlxreg-lc.c              | 156 ++++++++++---
+ drivers/platform/mellanox/mlxreg-lc.c              | 162 +++++++++++---
  drivers/platform/x86/mlx-platform.c                | 116 +++++++++-
  include/linux/platform_data/mlxreg.h               |  19 ++
- 15 files changed, 722 insertions(+), 254 deletions(-)
+ 15 files changed, 724 insertions(+), 258 deletions(-)
 
 diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
 index 19490058b..08aed5912 100644
@@ -1475,7 +1475,7 @@ index 13a6a6811..33c15027a 100644
  
  static ssize_t mlxreg_hotplug_attr_show(struct device *dev,
 diff --git a/drivers/platform/mellanox/mlxreg-lc.c b/drivers/platform/mellanox/mlxreg-lc.c
-index 513cf4d35..6a0cb89a7 100644
+index 513cf4d35..bc766f45e 100644
 --- a/drivers/platform/mellanox/mlxreg-lc.c
 +++ b/drivers/platform/mellanox/mlxreg-lc.c
 @@ -27,11 +27,7 @@
@@ -1528,7 +1528,38 @@ index 513cf4d35..6a0cb89a7 100644
  	.writeable_reg = mlxreg_lc_writeable_reg,
  	.readable_reg = mlxreg_lc_readable_reg,
  	.volatile_reg = mlxreg_lc_volatile_reg,
-@@ -451,16 +461,25 @@ static int mlxreg_lc_power_on_off(struct mlxreg_lc *mlxreg_lc, u8 action)
+@@ -405,7 +415,7 @@ mlxreg_lc_create_static_devices(struct mlxreg_lc *mlxreg_lc, struct mlxreg_hotpl
+ 	struct mlxreg_hotplug_device *dev = devs;
+ 	int i;
+ 
+-	/* Create static I2C device feeding by auxiliary power. */
++	/* Create static I2C device feeding by auxiliary or main power. */
+ 	for (i = 0; i < size; i++, dev++) {
+ 		dev->client = i2c_new_device(dev->adapter, dev->brdinfo);
+ 		if (IS_ERR(dev->client)) {
+@@ -424,7 +434,6 @@ fail_create_static_devices:
+ 		dev = devs + i;
+ 		i2c_unregister_device(dev->client);
+ 		dev->client = NULL;
+-		dev->adapter = NULL;
+ 	}
+ 	return IS_ERR(dev->client);
+ }
+@@ -436,12 +445,11 @@ mlxreg_lc_destroy_static_devices(struct mlxreg_lc *mlxreg_lc, struct mlxreg_hotp
+ 	struct mlxreg_hotplug_device *dev = devs;
+ 	int i;
+ 
+-	/* Destroy static I2C device feeding by auxiliary power. */
++	/* Destroy static I2C device feeding by auxiliary or main power. */
+ 	for (i = 0; i < size; i++, dev++) {
+ 		if (dev->client) {
+ 			i2c_unregister_device(dev->client);
+ 			dev->client = NULL;
+-			dev->adapter = NULL;
+ 		}
+ 	}
+ }
+@@ -451,16 +459,25 @@ static int mlxreg_lc_power_on_off(struct mlxreg_lc *mlxreg_lc, u8 action)
  	u32 regval;
  	int err;
  
@@ -1556,7 +1587,7 @@ index 513cf4d35..6a0cb89a7 100644
  }
  
  static int mlxreg_lc_enable_disable(struct mlxreg_lc *mlxreg_lc, bool action)
-@@ -486,8 +505,11 @@ static int mlxreg_lc_enable_disable(struct mlxreg_lc *mlxreg_lc, bool action)
+@@ -486,8 +503,11 @@ static int mlxreg_lc_enable_disable(struct mlxreg_lc *mlxreg_lc, bool action)
  		regval |= BIT(mlxreg_lc->data->slot);
  	else
  		regval &= ~BIT(mlxreg_lc->data->slot);
@@ -1569,7 +1600,7 @@ index 513cf4d35..6a0cb89a7 100644
  
  regmap_read_fail:
  	mutex_unlock(&mlxreg_lc->lock);
-@@ -521,6 +543,19 @@ mlxreg_lc_sn4800_c16_config_init(struct mlxreg_lc *mlxreg_lc, void *regmap,
+@@ -521,6 +541,19 @@ mlxreg_lc_sn4800_c16_config_init(struct mlxreg_lc *mlxreg_lc, void *regmap,
  	return 0;
  }
  
@@ -1589,7 +1620,7 @@ index 513cf4d35..6a0cb89a7 100644
  /*
   * Callback is to be called from mlxreg-hotplug driver to notify about line card about received
   * event.
-@@ -530,34 +565,51 @@ static int mlxreg_lc_event_handler(void *handle, enum mlxreg_hotplug_kind kind,
+@@ -530,34 +563,51 @@ static int mlxreg_lc_event_handler(void *handle, enum mlxreg_hotplug_kind kind,
  	struct mlxreg_lc *mlxreg_lc = handle;
  	int err = 0;
  
@@ -1660,7 +1691,7 @@ index 513cf4d35..6a0cb89a7 100644
  		break;
  	default:
  		break;
-@@ -587,6 +639,8 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
+@@ -587,6 +637,8 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
  
  	err = mlxreg_lc_create_static_devices(mlxreg_lc, mlxreg_lc->aux_devs,
  					      mlxreg_lc->aux_devs_num);
@@ -1669,7 +1700,7 @@ index 513cf4d35..6a0cb89a7 100644
  
  	/* Update I2C devices feeding by main power. */
  	main_dev = mlxreg_lc->main_devs;
-@@ -595,17 +649,49 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
+@@ -595,17 +647,49 @@ static int mlxreg_lc_completion_notify(void *handle, struct i2c_adapter *parent,
  		main_dev->nr = adapters[main_dev->nr]->nr;
  	}
  
@@ -1722,7 +1753,7 @@ index 513cf4d35..6a0cb89a7 100644
  	return err;
  }
  
-@@ -710,8 +796,11 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
+@@ -710,8 +794,11 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
  		return -ENOMEM;
  
  	mutex_init(&mlxreg_lc->lock);
@@ -1736,7 +1767,7 @@ index 513cf4d35..6a0cb89a7 100644
  	data->hpdev.adapter = i2c_get_adapter(data->hpdev.nr);
  	if (!data->hpdev.adapter) {
  		dev_err(&pdev->dev, "Failed to get adapter for bus %d\n",
-@@ -755,6 +844,7 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
+@@ -755,6 +842,7 @@ static int mlxreg_lc_probe(struct platform_device *pdev)
  	par_pdata = data->hpdev.brdinfo->platform_data;
  	mlxreg_lc->par_regmap = par_pdata->regmap;
  	mlxreg_lc->data = data;
