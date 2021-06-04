@@ -80,5 +80,7 @@ pinctrl-intel-backport-gpio-enable.patch
 0079-leds-mlxreg-Provide-conversion-for-hardware-LED-colo.patch
 0080-platform-x86-mlx-platform-Extend-FAN-and-LED-config-.patch
 0081-mlxsw-reg-Extend-MTMP-register-with-new-threshold-fi.patch
-0082-mlxsw-thermal-Add-function-for-reading-temperature-a.patch
-0083-mlxsw-Support-extended-capability-for-reading-temper.patch
+0082-mlxsw-core_env-Read-module-temperature-thresholds-us.patch
+0083-mlxsw-thermal-Add-function-for-reading-module-temper.patch
+0084-mlxsw-thermal-Read-module-temperature-thresholds-usi.patch
+0085-debug-thermal-mtmp-mcia.patch
