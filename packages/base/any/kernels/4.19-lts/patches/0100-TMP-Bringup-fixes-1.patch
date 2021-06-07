@@ -1,6 +1,6 @@
-From 66c953b5adb59ab52f720af6e8eed0d4e0be7cb2 Mon Sep 17 00:00:00 2001
+From 26448523c78aed2912e1111599d9100f0aa0891f Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Sun, 6 Jun 2021 20:53:24 +0300
+Date: Mon, 7 Jun 2021 11:46:17 +0300
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup fixes #1
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
@@ -10,17 +10,17 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  drivers/net/ethernet/mellanox/mlxsw/core.c         |  28 ++-
  drivers/net/ethernet/mellanox/mlxsw/core.h         |  20 +-
  drivers/net/ethernet/mellanox/mlxsw/core_env.c     |  16 +-
- drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   |  25 +-
+ drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   |  27 ++-
  .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 252 ++++++++++++++-------
  drivers/net/ethernet/mellanox/mlxsw/core_thermal.c |  63 ++++--
  drivers/net/ethernet/mellanox/mlxsw/i2c.c          |  18 +-
- drivers/net/ethernet/mellanox/mlxsw/minimal.c      | 106 ++++++---
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c      | 110 ++++++---
  drivers/net/ethernet/mellanox/mlxsw/reg.h          | 179 +++++++++++----
  drivers/platform/mellanox/mlxreg-hotplug.c         |  15 +-
  drivers/platform/mellanox/mlxreg-lc.c              | 162 ++++++++++---
  drivers/platform/x86/mlx-platform.c                | 116 +++++++++-
  include/linux/platform_data/mlxreg.h               |  19 ++
- 15 files changed, 763 insertions(+), 272 deletions(-)
+ 15 files changed, 769 insertions(+), 272 deletions(-)
 
 diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
 index 19490058b..08aed5912 100644
@@ -297,7 +297,7 @@ index c36deca8d..1cf08026e 100644
  }
  EXPORT_SYMBOL(mlxsw_env_sensor_map_create);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
-index 0f46125d6..d870d9e8d 100644
+index 0f46125d6..f08ff6f04 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
 @@ -392,10 +392,7 @@ mlxsw_hwmon_gbox_temp_label_show(struct device *dev,
@@ -321,7 +321,23 @@ index 0f46125d6..d870d9e8d 100644
  	err = mlxsw_reg_query(mlxsw_hwmon->core, MLXSW_REG(mgpir), mgpir_pl);
  	if (err)
  		return err;
-@@ -732,29 +729,33 @@ mlxsw_hwmon_got_active(struct mlxsw_core *mlxsw_core, u8 slot_index,
+@@ -622,6 +619,7 @@ static int mlxsw_hwmon_module_init(struct mlxsw_hwmon_dev *mlxsw_hwmon_dev)
+ 					     module_sensor_max;
+ 	for (i = mlxsw_hwmon_dev->sensor_count;
+ 	     i < mlxsw_hwmon_dev->module_sensor_max; i++) {
++printk("%s slot %d count %d index %d\n", __func__, mlxsw_hwmon_dev->slot_index, mlxsw_hwmon_dev->sensor_count, i);
+ 		mlxsw_hwmon_attr_add(mlxsw_hwmon_dev,
+ 				     MLXSW_HWMON_ATTR_TYPE_TEMP_MODULE, i, i);
+ 		mlxsw_hwmon_attr_add(mlxsw_hwmon_dev,
+@@ -701,6 +699,7 @@ mlxsw_hwmon_gearbox_init(struct mlxsw_hwmon_dev *mlxsw_hwmon_dev, u8 gbox_num)
+ 	max_index = mlxsw_hwmon_dev->module_sensor_max + gbox_num;
+ 	while (index < max_index) {
+ 		sensor_index = mlxsw_hwmon_dev->gearbox_sensor_map[i++];
++printk("%s slot_index %d sensor index %d i %d\n", __func__, mlxsw_hwmon_dev->slot_index, sensor_index, i);
+ 		mlxsw_reg_mtmp_pack(mtmp_pl, mlxsw_hwmon_dev->slot_index,
+ 				    sensor_index, true, true);
+ 		err = mlxsw_reg_write(mlxsw_hwmon->core,
+@@ -732,29 +731,33 @@ mlxsw_hwmon_got_active(struct mlxsw_core *mlxsw_core, u8 slot_index,
  		       const struct mlxsw_linecard *linecard, void *priv)
  {
  	struct mlxsw_hwmon *hwmon = priv;
@@ -358,7 +374,7 @@ index 0f46125d6..d870d9e8d 100644
  	sprintf(lc->name, "%s#%02u", "linecard", slot_index);
  	lc->hwmon_dev = hwmon_device_register_with_groups(dev, (const char *) lc->name,
  							  lc, lc->groups);
-@@ -762,6 +763,7 @@ mlxsw_hwmon_got_active(struct mlxsw_core *mlxsw_core, u8 slot_index,
+@@ -762,6 +765,7 @@ mlxsw_hwmon_got_active(struct mlxsw_core *mlxsw_core, u8 slot_index,
  		err = PTR_ERR(lc->hwmon_dev);
  		goto err_hwmon_linecard_register;
  	}
@@ -366,7 +382,7 @@ index 0f46125d6..d870d9e8d 100644
  
  	return;
  
-@@ -771,7 +773,7 @@ err_hwmon_linecard_gearbox_init:
+@@ -771,7 +775,7 @@ err_hwmon_linecard_gearbox_init:
  				     lc->gearbox_sensor_map);
  err_hwmon_linecard_env_sensor_map_create:
  err_hwmon_linecard_module_init:
@@ -375,7 +391,7 @@ index 0f46125d6..d870d9e8d 100644
  }
  
  static void
-@@ -786,6 +788,7 @@ mlxsw_hwmon_got_inactive(struct mlxsw_core *mlxsw_core, u8 slot_index,
+@@ -786,6 +790,7 @@ mlxsw_hwmon_got_inactive(struct mlxsw_core *mlxsw_core, u8 slot_index,
  	mlxsw_env_sensor_map_destroy(hwmon->bus_info,
  				     lc->gearbox_sensor_map);
  	hwmon->linecards[slot_index - 1] = NULL;
@@ -383,7 +399,7 @@ index 0f46125d6..d870d9e8d 100644
  }
  
  static struct mlxsw_linecards_event_ops mlxsw_hwmon_event_ops = {
-@@ -797,10 +800,10 @@ static int mlxsw_hwmon_linecards_register(struct mlxsw_hwmon *hwmon)
+@@ -797,10 +802,10 @@ static int mlxsw_hwmon_linecards_register(struct mlxsw_hwmon *hwmon)
  {
  	struct mlxsw_linecards *linecards = mlxsw_core_linecards(hwmon->core);
  	int err;
@@ -959,7 +975,7 @@ index ee4c0c5d9..b55518df2 100644
  	mlxsw_thermal_gearboxes_main_fini(thermal->main);
  err_thermal_gearboxes_main_init:
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/i2c.c b/drivers/net/ethernet/mellanox/mlxsw/i2c.c
-index 10754f704..b861d7a6f 100644
+index 10754f704..262e27092 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/i2c.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/i2c.c
 @@ -67,6 +67,7 @@
@@ -1002,7 +1018,7 @@ index 10754f704..b861d7a6f 100644
  	spin_unlock_irqrestore(&mlxsw_i2c->lock, flags);
 +
 +	if (!atomic_read(&mlxsw_i2c->irq_unhandled_count))
-+		atomic_set(&mlxsw_i2c->irq_unhandled_count, 5);
++		atomic_set(&mlxsw_i2c->irq_unhandled_count, 2);
  }
  
  static irqreturn_t mlxsw_i2c_irq_handler(int irq, void *dev)
@@ -1032,7 +1048,7 @@ index 10754f704..b861d7a6f 100644
  	mlxsw_core_bus_device_unregister(mlxsw_i2c->core, false);
  	mutex_destroy(&mlxsw_i2c->cmd.lock);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index 604daaa18..43c2cd860 100644
+index 604daaa18..8ee37d725 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 @@ -31,6 +31,7 @@ struct mlxsw_m {
@@ -1187,7 +1203,7 @@ index 604daaa18..43c2cd860 100644
  		err = mlxsw_reg_query(mlxsw_m->core, MLXSW_REG(mddq), mddq_pl);
  		if (err)
  			dev_err(mlxsw_m->bus_info->dev, "Fail to query MDDQ register for slot %d\n",
-@@ -319,34 +332,59 @@ static void mlxsw_m_sys_event_handler(struct mlxsw_core *mlxsw_core)
+@@ -319,34 +332,63 @@ static void mlxsw_m_sys_event_handler(struct mlxsw_core *mlxsw_core)
  	}
  }
  
@@ -1204,6 +1220,10 @@ index 604daaa18..43c2cd860 100644
  	int err;
  
 -	err = mlxsw_m_ports_create(mlxsw_m_area, slot_index);
++	/* Check if linecard is already provisioned. */
++	if (mlxsw_m->linecards[slot_index - 1])
++		return 0;
++
 +	lc = kzalloc(sizeof(*lc), GFP_KERNEL);
 +	if (!lc)
 +		return -ENOMEM;
@@ -1259,7 +1279,7 @@ index 604daaa18..43c2cd860 100644
  };
  
  static int mlxsw_m_linecards_register(struct mlxsw_m *mlxsw_m)
-@@ -356,7 +394,7 @@ static int mlxsw_m_linecards_register(struct mlxsw_m *mlxsw_m)
+@@ -356,7 +398,7 @@ static int mlxsw_m_linecards_register(struct mlxsw_m *mlxsw_m)
  
  	if (!linecards || !linecards->count)
  		return 0;
@@ -1268,7 +1288,7 @@ index 604daaa18..43c2cd860 100644
  	mlxsw_m->linecards = kcalloc(linecards->count, sizeof(*mlxsw_m->linecards),
  				     GFP_KERNEL);
  	if (!mlxsw_m->linecards)
-@@ -368,6 +406,8 @@ static int mlxsw_m_linecards_register(struct mlxsw_m *mlxsw_m)
+@@ -368,6 +410,8 @@ static int mlxsw_m_linecards_register(struct mlxsw_m *mlxsw_m)
  	if (err)
  		goto err_linecards_event_ops_register;
  
@@ -1277,7 +1297,7 @@ index 604daaa18..43c2cd860 100644
  	return 0;
  
  err_linecards_event_ops_register:
-@@ -382,6 +422,8 @@ static void mlxsw_m_linecards_unregister(struct mlxsw_m *mlxsw_m)
+@@ -382,6 +426,8 @@ static void mlxsw_m_linecards_unregister(struct mlxsw_m *mlxsw_m)
  	if (!linecards || !linecards->count)
  		return;
  
