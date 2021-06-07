@@ -83,4 +83,5 @@ pinctrl-intel-backport-gpio-enable.patch
 0082-mlxsw-core_env-Read-module-temperature-thresholds-us.patch
 0083-mlxsw-thermal-Add-function-for-reading-module-temper.patch
 0084-mlxsw-thermal-Read-module-temperature-thresholds-usi.patch
+0085-mlxsw-core-Set-thermal-zone-polling-delay-argument-t.patch
 0085-debug-thermal-mtmp-mcia.patch
