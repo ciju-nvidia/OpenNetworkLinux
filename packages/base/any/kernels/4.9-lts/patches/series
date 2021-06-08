@@ -70,3 +70,5 @@ driver-add-the-support-max6620.patch
 0067-mlxsw-core-Increase-critical-threshold-for-ASIC-ther.patch
 0068-hwmon-pmbus-Add-support-for-MPS-Multi-phase-mp2888-c.patch
 0069-mlxsw-core-Add-validation-of-transceiver-temperature.patch
+0070-platform-mellanox-Add-dedicated-match-for-system-typ.patch
+0071-mlxsw-core-Remove-critical-trip-point-from-thermal-z.patch
