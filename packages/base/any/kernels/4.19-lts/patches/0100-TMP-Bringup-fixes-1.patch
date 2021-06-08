@@ -1,6 +1,6 @@
-From dd3d4fcb2e8dab673d7e56e4669d527494920c09 Mon Sep 17 00:00:00 2001
+From da78d677d818e5d66725c601fa473858b31206ab Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Mon, 7 Jun 2021 14:46:09 +0300
+Date: Tue, 8 Jun 2021 20:02:41 +0300
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup fixes #1
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
@@ -15,12 +15,12 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  drivers/net/ethernet/mellanox/mlxsw/core_thermal.c |  63 ++++--
  drivers/net/ethernet/mellanox/mlxsw/i2c.c          |  18 +-
  drivers/net/ethernet/mellanox/mlxsw/minimal.c      | 110 ++++++---
- drivers/net/ethernet/mellanox/mlxsw/reg.h          | 183 +++++++++++----
+ drivers/net/ethernet/mellanox/mlxsw/reg.h          | 179 +++++++++++----
  drivers/platform/mellanox/mlxreg-hotplug.c         |  15 +-
  drivers/platform/mellanox/mlxreg-lc.c              | 162 ++++++++++---
  drivers/platform/x86/mlx-platform.c                | 116 +++++++++-
  include/linux/platform_data/mlxreg.h               |  19 ++
- 15 files changed, 779 insertions(+), 278 deletions(-)
+ 15 files changed, 777 insertions(+), 276 deletions(-)
 
 diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
 index 19490058b..08aed5912 100644
@@ -310,7 +310,7 @@ index c36deca8d..cf868eff9 100644
  }
  EXPORT_SYMBOL(mlxsw_env_sensor_map_destroy);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
-index 0f46125d6..aeca1c62d 100644
+index 0f46125d6..2568a64fb 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
 @@ -392,10 +392,7 @@ mlxsw_hwmon_gbox_temp_label_show(struct device *dev,
@@ -418,14 +418,14 @@ index 0f46125d6..aeca1c62d 100644
  }
  
  static void
-@@ -786,6 +790,7 @@ mlxsw_hwmon_got_inactive(struct mlxsw_core *mlxsw_core, u8 slot_index,
+@@ -785,6 +789,7 @@ mlxsw_hwmon_got_inactive(struct mlxsw_core *mlxsw_core, u8 slot_index,
+ 		hwmon_device_unregister(lc->hwmon_dev);
  	mlxsw_env_sensor_map_destroy(hwmon->bus_info,
  				     lc->gearbox_sensor_map);
- 	hwmon->linecards[slot_index - 1] = NULL;
 +	kfree(lc);
+ 	hwmon->linecards[slot_index - 1] = NULL;
  }
  
- static struct mlxsw_linecards_event_ops mlxsw_hwmon_event_ops = {
 @@ -800,7 +805,7 @@ static int mlxsw_hwmon_linecards_register(struct mlxsw_hwmon *hwmon)
  
  	if (!linecards || !linecards->count)
@@ -1329,20 +1329,9 @@ index 604daaa18..8ee37d725 100644
  					     &mlxsw_m_event_ops, mlxsw_m);
  	kfree(mlxsw_m->linecards);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/reg.h b/drivers/net/ethernet/mellanox/mlxsw/reg.h
-index bb2a1420d..ad71d040b 100644
+index bb2a1420d..e9d1ab7c5 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/reg.h
 +++ b/drivers/net/ethernet/mellanox/mlxsw/reg.h
-@@ -8020,8 +8020,8 @@ static inline void mlxsw_reg_mtmp_pack(char *payload, u8 slot_index,
- 	mlxsw_reg_mtmp_sensor_index_set(payload, sensor_index);
- 	mlxsw_reg_mtmp_mte_set(payload, max_temp_enable);
- 	mlxsw_reg_mtmp_mtr_set(payload, max_temp_reset);
--	mlxsw_reg_mtmp_temperature_threshold_hi_set(payload,
--						    MLXSW_REG_MTMP_THRESH_HI);
-+	/*mlxsw_reg_mtmp_temperature_threshold_hi_set(payload,
-+						    MLXSW_REG_MTMP_THRESH_HI);*/
- }
- 
- static inline void mlxsw_reg_mtmp_unpack(char *payload, int *p_temp,
 @@ -9011,8 +9011,8 @@ MLXSW_ITEM32(reg, mgpir, num_of_modules, 0x04, 0, 8);
  
  static inline void mlxsw_reg_mgpir_pack(char *payload, u8 slot_index)
@@ -1637,7 +1626,7 @@ index bb2a1420d..ad71d040b 100644
  }
  
 diff --git a/drivers/platform/mellanox/mlxreg-hotplug.c b/drivers/platform/mellanox/mlxreg-hotplug.c
-index 13a6a6811..33c15027a 100644
+index 13a6a6811..347d0cd63 100644
 --- a/drivers/platform/mellanox/mlxreg-hotplug.c
 +++ b/drivers/platform/mellanox/mlxreg-hotplug.c
 @@ -121,7 +121,7 @@ static int mlxreg_hotplug_device_create(struct mlxreg_hotplug_priv_data *priv,
@@ -1669,16 +1658,16 @@ index 13a6a6811..33c15027a 100644
  
  	return 0;
  }
-@@ -183,6 +185,9 @@ mlxreg_hotplug_device_destroy(struct mlxreg_hotplug_priv_data *priv,
+@@ -182,6 +184,9 @@ mlxreg_hotplug_device_destroy(struct mlxreg_hotplug_priv_data *priv,
+ {
  	/* Notify user by sending hwmon uevent. */
  	mlxreg_hotplug_udev_event_send(&priv->hwmon->kobj, data, false);
- 
++dev_info(priv->dev, "label %s action %d kind %d\n", data->label, data->hpdev.action, kind);
 +	if (data->hpdev.user_handler)
 +		data->hpdev.user_handler(data->hpdev.handle, kind, 0);
-+
+ 
  	switch (data->hpdev.action) {
  	case MLXREG_HOTPLUG_DEVICE_DEFAULT_ACTION:
- 		if (data->hpdev.client) {
 @@ -203,8 +208,8 @@ mlxreg_hotplug_device_destroy(struct mlxreg_hotplug_priv_data *priv,
  		break;
  	}
