@@ -19,6 +19,10 @@ default:
     # this is mostly to *reject* invalid disk labels,
     # since we will never create our own
 
+    kernel-5.10: &kernel-5-10
+      =: kernel-5.10-lts-x86_64-all
+      package: onl-kernel-5.10-lts-x86-64-all:amd64
+
     kernel-4.9: &kernel-4-9
       =: kernel-4.9-lts-x86_64-all
       package: onl-kernel-4.9-lts-x86-64-all:amd64

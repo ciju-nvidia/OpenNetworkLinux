@@ -1,6 +1,7 @@
 include $(ONL)/make/config.amd64.mk
 
 # All amd64 kernels -> $FILES
+$(eval $(call onlpm_find_file_add,X,onl-kernel-5.10-lts-x86-64-all:amd64,kernel-5.10-lts-x86_64-all,FILES))
 $(eval $(call onlpm_find_file_add,X,onl-kernel-4.9-lts-x86-64-all:amd64,kernel-4.9-lts-x86_64-all,FILES))
 $(eval $(call onlpm_find_file_add,X,onl-kernel-4.19-lts-x86-64-all:amd64,kernel-4.19-lts-x86_64-all,FILES))
 

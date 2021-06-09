@@ -10,6 +10,7 @@
 - onl-upgrade
 - hw-management
 - sx-kernel
+- onl-kernel-5.10-lts-x86-64-all-modules
 - onl-kernel-4.9-lts-x86-64-all-modules
 - onl-kernel-4.19-lts-x86-64-all-modules
 - efibootmgr
