@@ -5,7 +5,7 @@
 #
 # Example:
 #
-# $(eval $(call onlpm_find_file,KERNEL_4_14,onl-kernel-4.14-lts-x86-64-all:amd64,kernel-4.14-lts-x86_64-all))
+# $(eval $(call onlpm_find_file,KERNEL_4_19,onl-kernel-4.19-lts-x86-64-all:amd64,kernel-4.19-lts-x86_64-all))
 #
 define onlpm_find_file
 $(1) := $$(shell $(ONLPM) --find-file $(2) $(3))
