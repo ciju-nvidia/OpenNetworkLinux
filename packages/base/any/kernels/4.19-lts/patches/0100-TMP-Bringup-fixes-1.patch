@@ -1,26 +1,26 @@
-From da78d677d818e5d66725c601fa473858b31206ab Mon Sep 17 00:00:00 2001
+From 546ea9fbdc1f91a1c1d994b536aa126b798a711e Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Tue, 8 Jun 2021 20:02:41 +0300
+Date: Wed, 9 Jun 2021 11:42:00 +0300
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup fixes #1
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
  drivers/hwmon/pmbus/mp2975.c                       |   3 +-
- drivers/i2c/busses/i2c-mlxcpld.c                   |  13 +-
+ drivers/i2c/busses/i2c-mlxcpld.c                   |  16 +-
  drivers/net/ethernet/mellanox/mlxsw/core.c         |  28 ++-
  drivers/net/ethernet/mellanox/mlxsw/core.h         |  20 +-
  drivers/net/ethernet/mellanox/mlxsw/core_env.c     |  24 +-
  drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   |  31 +--
  .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 252 ++++++++++++++-------
  drivers/net/ethernet/mellanox/mlxsw/core_thermal.c |  63 ++++--
- drivers/net/ethernet/mellanox/mlxsw/i2c.c          |  18 +-
+ drivers/net/ethernet/mellanox/mlxsw/i2c.c          |  17 +-
  drivers/net/ethernet/mellanox/mlxsw/minimal.c      | 110 ++++++---
  drivers/net/ethernet/mellanox/mlxsw/reg.h          | 179 +++++++++++----
  drivers/platform/mellanox/mlxreg-hotplug.c         |  15 +-
  drivers/platform/mellanox/mlxreg-lc.c              | 162 ++++++++++---
  drivers/platform/x86/mlx-platform.c                | 116 +++++++++-
  include/linux/platform_data/mlxreg.h               |  19 ++
- 15 files changed, 777 insertions(+), 276 deletions(-)
+ 15 files changed, 778 insertions(+), 277 deletions(-)
 
 diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
 index 19490058b..08aed5912 100644
@@ -37,7 +37,7 @@ index 19490058b..08aed5912 100644
  struct mp2975_data {
  	struct pmbus_driver_info info;
 diff --git a/drivers/i2c/busses/i2c-mlxcpld.c b/drivers/i2c/busses/i2c-mlxcpld.c
-index fa8cc0b71..e45d66ab6 100644
+index fa8cc0b71..7b7af48cb 100644
 --- a/drivers/i2c/busses/i2c-mlxcpld.c
 +++ b/drivers/i2c/busses/i2c-mlxcpld.c
 @@ -27,7 +27,7 @@
@@ -81,7 +81,17 @@ index fa8cc0b71..e45d66ab6 100644
  	} while (status == 0 && timeout < MLXCPLD_I2C_XFER_TO);
  
  	switch (status) {
-@@ -501,6 +502,7 @@ mlxcpld_i2c_set_frequency(struct mlxcpld_i2c_priv *priv,
+@@ -493,14 +494,16 @@ mlxcpld_i2c_set_frequency(struct mlxcpld_i2c_priv *priv,
+ 	err = regmap_read(pdata->regmap, data->reg, &regval);
+ 	if (err)
+ 		return err;
+-
++printk("%s reg 0x%08x mask 0x%08x bit 0x%08x match )x%08x\n", __func__, data->reg, data->mask, data->bit, (data->reg & data->mask) >> data->bit);
+ 	/* Set frequency only if it is not 100KHz, which is default. */
+ 	switch ((data->reg & data->mask) >> data->bit) {
+ 	case MLXCPLD_I2C_FREQ_1000KHZ:
+ 		freq = MLXCPLD_I2C_FREQ_1000KHZ_SET;
++		priv->polling_time /= 4;
  		break;
  	case MLXCPLD_I2C_FREQ_400KHZ:
  		freq = MLXCPLD_I2C_FREQ_400KHZ_SET;
@@ -89,7 +99,7 @@ index fa8cc0b71..e45d66ab6 100644
  		break;
  	default:
  		return 0;
-@@ -527,6 +529,7 @@ static int mlxcpld_i2c_probe(struct platform_device *pdev)
+@@ -527,6 +530,7 @@ static int mlxcpld_i2c_probe(struct platform_device *pdev)
  
  	priv->dev = &pdev->dev;
  	priv->base_addr = MLXPLAT_CPLD_LPC_I2C_BASE_ADDR;
@@ -997,7 +1007,7 @@ index ee4c0c5d9..53cf5a8da 100644
  	mlxsw_thermal_gearboxes_main_fini(thermal->main);
  err_thermal_gearboxes_main_init:
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/i2c.c b/drivers/net/ethernet/mellanox/mlxsw/i2c.c
-index 10754f704..262e27092 100644
+index 10754f704..5fb5d773d 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/i2c.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/i2c.c
 @@ -67,6 +67,7 @@
@@ -1016,13 +1026,12 @@ index 10754f704..262e27092 100644
  };
  
  #define MLXSW_I2C_READ_MSG(_client, _addr_buf, _buf, _len) {	\
-@@ -562,6 +564,13 @@ static void mlxsw_i2c_work_handler(struct work_struct *work)
+@@ -562,6 +564,12 @@ static void mlxsw_i2c_work_handler(struct work_struct *work)
  	unsigned long flags;
  
  	mlxsw_i2c = container_of(work, struct mlxsw_i2c, dwork_irq.work);
 +
 +	if (atomic_read(&mlxsw_i2c->irq_unhandled_count)) {
-+
 +		if (atomic_dec_and_test(&mlxsw_i2c->irq_unhandled_count))
 +			return;
 +	}
@@ -1030,7 +1039,7 @@ index 10754f704..262e27092 100644
  	mlxsw_i2c->sys_event_handler(mlxsw_i2c->core);
  
  	spin_lock_irqsave(&mlxsw_i2c->lock, flags);
-@@ -574,9 +583,12 @@ static void mlxsw_i2c_work_handler(struct work_struct *work)
+@@ -574,9 +582,12 @@ static void mlxsw_i2c_work_handler(struct work_struct *work)
  	 * signals have been received during masking.
  	 */
  	cancel_delayed_work(&mlxsw_i2c->dwork_irq);
@@ -1040,11 +1049,11 @@ index 10754f704..262e27092 100644
  	spin_unlock_irqrestore(&mlxsw_i2c->lock, flags);
 +
 +	if (!atomic_read(&mlxsw_i2c->irq_unhandled_count))
-+		atomic_set(&mlxsw_i2c->irq_unhandled_count, 2);
++		atomic_set(&mlxsw_i2c->irq_unhandled_count, 1);
  }
  
  static irqreturn_t mlxsw_i2c_irq_handler(int irq, void *dev)
-@@ -586,7 +598,7 @@ static irqreturn_t mlxsw_i2c_irq_handler(int irq, void *dev)
+@@ -586,7 +597,7 @@ static irqreturn_t mlxsw_i2c_irq_handler(int irq, void *dev)
  	/* Schedule work task for immediate execution.*/
  	schedule_delayed_work(&mlxsw_i2c->dwork_irq, 0);
  
@@ -1053,7 +1062,7 @@ index 10754f704..262e27092 100644
  }
  
  static int mlxsw_i2c_event_handler_register(struct mlxsw_i2c *mlxsw_i2c)
-@@ -727,6 +739,7 @@ static int mlxsw_i2c_probe(struct i2c_client *client,
+@@ -727,6 +738,7 @@ static int mlxsw_i2c_probe(struct i2c_client *client,
  	if (err)
  		return err;
  
@@ -1061,7 +1070,7 @@ index 10754f704..262e27092 100644
  	dev_info(&client->dev, "Firmware revision: %d.%d.%d\n",
  		 mlxsw_i2c->bus_info.fw_rev.major,
  		 mlxsw_i2c->bus_info.fw_rev.minor,
-@@ -744,6 +757,7 @@ static int mlxsw_i2c_remove(struct i2c_client *client)
+@@ -744,6 +756,7 @@ static int mlxsw_i2c_remove(struct i2c_client *client)
  {
  	struct mlxsw_i2c *mlxsw_i2c = i2c_get_clientdata(client);
  
@@ -1626,7 +1635,7 @@ index bb2a1420d..e9d1ab7c5 100644
  }
  
 diff --git a/drivers/platform/mellanox/mlxreg-hotplug.c b/drivers/platform/mellanox/mlxreg-hotplug.c
-index 13a6a6811..347d0cd63 100644
+index 13a6a6811..bb1d001de 100644
 --- a/drivers/platform/mellanox/mlxreg-hotplug.c
 +++ b/drivers/platform/mellanox/mlxreg-hotplug.c
 @@ -121,7 +121,7 @@ static int mlxreg_hotplug_device_create(struct mlxreg_hotplug_priv_data *priv,
@@ -1662,7 +1671,7 @@ index 13a6a6811..347d0cd63 100644
  {
  	/* Notify user by sending hwmon uevent. */
  	mlxreg_hotplug_udev_event_send(&priv->hwmon->kobj, data, false);
-+dev_info(priv->dev, "label %s action %d kind %d\n", data->label, data->hpdev.action, kind);
++dev_info(priv->dev, "label %s action %d kind %d client %p\n", data->label, data->hpdev.action, kind, data->hpdev.client);
 +	if (data->hpdev.user_handler)
 +		data->hpdev.user_handler(data->hpdev.handle, kind, 0);
  
