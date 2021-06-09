@@ -1,12 +1,12 @@
-From 546ea9fbdc1f91a1c1d994b536aa126b798a711e Mon Sep 17 00:00:00 2001
+From d4a69e3308fe0e8dda810240f5f5bb247ab70225 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Wed, 9 Jun 2021 11:42:00 +0300
+Date: Wed, 9 Jun 2021 15:32:50 +0300
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup fixes #1
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
  drivers/hwmon/pmbus/mp2975.c                       |   3 +-
- drivers/i2c/busses/i2c-mlxcpld.c                   |  16 +-
+ drivers/i2c/busses/i2c-mlxcpld.c                   |  18 +-
  drivers/net/ethernet/mellanox/mlxsw/core.c         |  28 ++-
  drivers/net/ethernet/mellanox/mlxsw/core.h         |  20 +-
  drivers/net/ethernet/mellanox/mlxsw/core_env.c     |  24 +-
@@ -20,7 +20,7 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  drivers/platform/mellanox/mlxreg-lc.c              | 162 ++++++++++---
  drivers/platform/x86/mlx-platform.c                | 116 +++++++++-
  include/linux/platform_data/mlxreg.h               |  19 ++
- 15 files changed, 778 insertions(+), 277 deletions(-)
+ 15 files changed, 779 insertions(+), 278 deletions(-)
 
 diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
 index 19490058b..08aed5912 100644
@@ -37,7 +37,7 @@ index 19490058b..08aed5912 100644
  struct mp2975_data {
  	struct pmbus_driver_info info;
 diff --git a/drivers/i2c/busses/i2c-mlxcpld.c b/drivers/i2c/busses/i2c-mlxcpld.c
-index fa8cc0b71..7b7af48cb 100644
+index fa8cc0b71..17a4a35cf 100644
 --- a/drivers/i2c/busses/i2c-mlxcpld.c
 +++ b/drivers/i2c/busses/i2c-mlxcpld.c
 @@ -27,7 +27,7 @@
@@ -86,9 +86,10 @@ index fa8cc0b71..7b7af48cb 100644
  	if (err)
  		return err;
 -
-+printk("%s reg 0x%08x mask 0x%08x bit 0x%08x match )x%08x\n", __func__, data->reg, data->mask, data->bit, (data->reg & data->mask) >> data->bit);
++printk("%s regval 0x%08x reg 0x%08x mask 0x%08x bit 0x%08x masked 0x%08x match 0x%08x\n", __func__, regval, data->reg, data->mask, data->bit, (data->reg & data->mask), (data->reg & data->mask) >> data->bit);
  	/* Set frequency only if it is not 100KHz, which is default. */
- 	switch ((data->reg & data->mask) >> data->bit) {
+-	switch ((data->reg & data->mask) >> data->bit) {
++	switch ((regval & data->mask) >> data->bit) {
  	case MLXCPLD_I2C_FREQ_1000KHZ:
  		freq = MLXCPLD_I2C_FREQ_1000KHZ_SET;
 +		priv->polling_time /= 4;
@@ -446,7 +447,7 @@ index 0f46125d6..2568a64fb 100644
  				   GFP_KERNEL);
  	if (!hwmon->linecards)
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c b/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
-index 22db8b230..b8fb2f020 100644
+index 22db8b230..f7b24031b 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
 @@ -1,5 +1,5 @@
@@ -675,7 +676,7 @@ index 22db8b230..b8fb2f020 100644
 -						   linecards, linecard);
 -		}
 -		linecard->ready = ready;
-+	printk("%s lc%u linecard->provisioned %d linecard->ready %d linecard->active %d\n",__func__, slot_index, linecard->provisioned, linecard->ready, linecard->active);
++	//printk("%s lc%u linecard->provisioned %d linecard->ready %d linecard->active %d\n",__func__, slot_index, linecard->provisioned, linecard->ready, linecard->active);
 +
 +	mutex_lock(&linecard->lock);
 +
@@ -854,7 +855,7 @@ index 22db8b230..b8fb2f020 100644
  
  int mlxsw_linecards_event_ops_register(struct mlxsw_core *mlxsw_core,
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
-index ee4c0c5d9..53cf5a8da 100644
+index ee4c0c5d9..2b1b749a2 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 @@ -24,7 +24,7 @@
@@ -928,7 +929,7 @@ index ee4c0c5d9..53cf5a8da 100644
 +	struct mlxsw_thermal_area *lc;
  	int err;
  
-+	lc = devm_kzalloc(thermal->bus_info->dev, sizeof(*lc), GFP_KERNEL);
++	lc = kzalloc(sizeof(*lc), GFP_KERNEL);
 +	if (!lc)
 +		return;
 +
@@ -975,7 +976,7 @@ index ee4c0c5d9..53cf5a8da 100644
 +	mlxsw_thermal_modules_fini(thermal, lc);
  err_thermal_linecard_modules_init:
 -	devm_kfree(thermal->bus_info->dev, area);
-+	devm_kfree(thermal->bus_info->dev, lc);
++	kfree(lc);
  }
  
  static void mlxsw_thermal_got_inactive(struct mlxsw_core *mlxsw_core, u8 slot_index,
@@ -994,7 +995,7 @@ index ee4c0c5d9..53cf5a8da 100644
 -	devm_kfree(thermal->bus_info->dev, area);
 +				     lc->gearbox_sensor_map);
 +	mlxsw_thermal_modules_fini(thermal, lc);
-+	devm_kfree(thermal->bus_info->dev, lc);
++	kfree(lc);
  }
  
  static struct mlxsw_linecards_event_ops mlxsw_thermal_event_ops = {
@@ -1007,7 +1008,7 @@ index ee4c0c5d9..53cf5a8da 100644
  	mlxsw_thermal_gearboxes_main_fini(thermal->main);
  err_thermal_gearboxes_main_init:
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/i2c.c b/drivers/net/ethernet/mellanox/mlxsw/i2c.c
-index 10754f704..5fb5d773d 100644
+index 10754f704..a5bc15941 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/i2c.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/i2c.c
 @@ -67,6 +67,7 @@
@@ -1074,7 +1075,7 @@ index 10754f704..5fb5d773d 100644
  {
  	struct mlxsw_i2c *mlxsw_i2c = i2c_get_clientdata(client);
  
-+	atomic_set(&mlxsw_i2c->irq_unhandled_count, 0);
++	atomic_set(&mlxsw_i2c->irq_unhandled_count, 100);
  	mlxsw_i2c_event_handler_unregister(mlxsw_i2c);
  	mlxsw_core_bus_device_unregister(mlxsw_i2c->core, false);
  	mutex_destroy(&mlxsw_i2c->cmd.lock);
