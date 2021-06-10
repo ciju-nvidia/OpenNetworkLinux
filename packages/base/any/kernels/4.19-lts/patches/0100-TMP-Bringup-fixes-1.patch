@@ -1,7 +1,7 @@
-From dea49b1ad73e7afa1dc6b910146944d1f731f522 Mon Sep 17 00:00:00 2001
+From 5e3a1f0127703d9da0f9f889e8c5fc11f414dfe7 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Thu, 10 Jun 2021 17:33:22 +0300
-Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup fixes #1
+Date: Thu, 10 Jun 2021 21:01:59 +0300
+Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
@@ -11,16 +11,16 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  drivers/net/ethernet/mellanox/mlxsw/core.h         |  20 +-
  drivers/net/ethernet/mellanox/mlxsw/core_env.c     |  20 +-
  drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   |  24 +-
- .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 252 ++++++++++++++-------
+ .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 256 ++++++++++++++-------
  drivers/net/ethernet/mellanox/mlxsw/core_thermal.c |  62 +++--
- drivers/net/ethernet/mellanox/mlxsw/i2c.c          |  27 ++-
+ drivers/net/ethernet/mellanox/mlxsw/i2c.c          |  34 ++-
  drivers/net/ethernet/mellanox/mlxsw/minimal.c      | 113 ++++++---
- drivers/net/ethernet/mellanox/mlxsw/reg.h          | 179 +++++++++++----
+ drivers/net/ethernet/mellanox/mlxsw/reg.h          | 179 ++++++++++----
  drivers/platform/mellanox/mlxreg-hotplug.c         |  15 +-
  drivers/platform/mellanox/mlxreg-lc.c              | 171 +++++++++++---
  drivers/platform/x86/mlx-platform.c                | 116 +++++++++-
  include/linux/platform_data/mlxreg.h               |  19 ++
- 15 files changed, 788 insertions(+), 279 deletions(-)
+ 15 files changed, 799 insertions(+), 279 deletions(-)
 
 diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
 index 19490058b..08aed5912 100644
@@ -420,7 +420,7 @@ index 0f46125d6..d66d66164 100644
  				   GFP_KERNEL);
  	if (!hwmon->linecards)
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c b/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
-index 22db8b230..f7b24031b 100644
+index 22db8b230..ecdec2c40 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
 @@ -1,5 +1,5 @@
@@ -750,17 +750,24 @@ index 22db8b230..f7b24031b 100644
  	if (err)
  		goto err_status_get_and_process;
  
-@@ -201,8 +275,7 @@ static int mlxsw_linecard_event_delivery_set(struct mlxsw_core *mlxsw_core,
+@@ -199,11 +273,14 @@ static int mlxsw_linecard_event_delivery_set(struct mlxsw_core *mlxsw_core,
+ 					     struct mlxsw_linecard *linecard,
+ 					     bool enable)
  {
++#if 0
  	char mddq_pl[MLXSW_REG_MDDQ_LEN];
  
 -	mlxsw_reg_mddq_pack(mddq_pl, linecard->slot_index, enable,
 -			    MLXSW_REG_MDDQ_QUERY_TYPE_SLOT_INFO);
 +	mlxsw_reg_mddq_slot_info_pack(mddq_pl, linecard->slot_index, enable);
  	return mlxsw_reg_write(mlxsw_core, MLXSW_REG(mddq), mddq_pl);
++#else
++	return 0;
++#endif
  }
  
-@@ -212,7 +285,7 @@ static int mlxsw_linecard_post_init(struct mlxsw_core *mlxsw_core,
+ static int mlxsw_linecard_post_init(struct mlxsw_core *mlxsw_core,
+@@ -212,7 +289,7 @@ static int mlxsw_linecard_post_init(struct mlxsw_core *mlxsw_core,
  {
  	struct mlxsw_linecard *linecard;
  	int err;
@@ -769,7 +776,7 @@ index 22db8b230..f7b24031b 100644
  	linecard = mlxsw_linecard_get(linecards, slot_index);
  	linecard->slot_index = slot_index;
  
-@@ -220,8 +293,8 @@ static int mlxsw_linecard_post_init(struct mlxsw_core *mlxsw_core,
+@@ -220,8 +297,8 @@ static int mlxsw_linecard_post_init(struct mlxsw_core *mlxsw_core,
  	if (err)
  		return err;
  
@@ -780,7 +787,7 @@ index 22db8b230..f7b24031b 100644
  	if (err)
  		goto err_status_get_and_process;
  
-@@ -252,6 +325,7 @@ static void mlxsw_linecard_fini(struct mlxsw_core *mlxsw_core,
+@@ -252,6 +329,7 @@ static void mlxsw_linecard_fini(struct mlxsw_core *mlxsw_core,
  }
  
  int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
@@ -788,7 +795,7 @@ index 22db8b230..f7b24031b 100644
  			 struct mlxsw_linecards **p_linecards)
  {
  	char mgpir_pl[MLXSW_REG_MGPIR_LEN];
-@@ -278,6 +352,8 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
+@@ -278,6 +356,8 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
  		return -ENOMEM;
  	linecards->count = slot_count;
  	linecards->mlxsw_core = mlxsw_core;
@@ -797,7 +804,7 @@ index 22db8b230..f7b24031b 100644
  
  	for (i = 0; i < linecards->count; i++) {
  		err = mlxsw_linecard_init(mlxsw_core, linecards, i + 1);
-@@ -285,7 +361,6 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
+@@ -285,7 +365,6 @@ int mlxsw_linecards_init(struct mlxsw_core *mlxsw_core,
  			goto err_linecard_init;
  	}
  
@@ -805,7 +812,7 @@ index 22db8b230..f7b24031b 100644
  	*p_linecards = linecards;
  
  	return 0;
-@@ -310,11 +385,11 @@ int mlxsw_linecards_post_init(struct mlxsw_core *mlxsw_core,
+@@ -310,11 +389,11 @@ int mlxsw_linecards_post_init(struct mlxsw_core *mlxsw_core,
  	for (i = 0; i < linecards->count; i++) {
  		err = mlxsw_linecard_post_init(mlxsw_core, linecards, i + 1);
  		if (err)
@@ -819,7 +826,7 @@ index 22db8b230..f7b24031b 100644
  	for (i--; i >= 0; i--)
  		mlxsw_linecard_pre_fini(mlxsw_core, linecards, i + 1);
  
-@@ -344,6 +419,7 @@ void mlxsw_linecards_fini(struct mlxsw_core *mlxsw_core,
+@@ -344,6 +423,7 @@ void mlxsw_linecards_fini(struct mlxsw_core *mlxsw_core,
  	WARN_ON(!list_empty(&linecards->event_ops_list));
  	for (i = 0; i < linecards->count; i++)
  		mlxsw_linecard_fini(mlxsw_core, linecards, i + 1);
@@ -980,7 +987,7 @@ index ee4c0c5d9..114253686 100644
  	mlxsw_thermal_gearboxes_main_fini(thermal->main);
  err_thermal_gearboxes_main_init:
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/i2c.c b/drivers/net/ethernet/mellanox/mlxsw/i2c.c
-index 10754f704..2d6f85797 100644
+index 10754f704..9f2dcb7f5 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/i2c.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/i2c.c
 @@ -52,6 +52,10 @@
@@ -994,23 +1001,36 @@ index 10754f704..2d6f85797 100644
  /**
   * struct mlxsw_i2c - device private data:
   * @cmd.mb_size_in: input mailbox size;
-@@ -67,6 +71,7 @@
+@@ -67,6 +71,8 @@
   * @dwork_irq: interrupts delayed work queue;
   * @lock - lock for interrupts sync;
   * @sys_event_handler: system events handler callback;
 + * @irq_unhandled_count: number of unhandled interrupts;
++ * @access_prohibited: access to device is prohibited during remove;
   */
  struct mlxsw_i2c {
  	struct {
-@@ -84,6 +89,7 @@ struct mlxsw_i2c {
+@@ -84,6 +90,8 @@ struct mlxsw_i2c {
  	struct delayed_work dwork_irq;
  	spinlock_t lock; /* sync with interrupt */
  	void (*sys_event_handler)(struct mlxsw_core *mlxsw_core);
 +	atomic_t irq_unhandled_count;
++	int access_prohibited;
  };
  
  #define MLXSW_I2C_READ_MSG(_client, _addr_buf, _buf, _len) {	\
-@@ -562,6 +568,12 @@ static void mlxsw_i2c_work_handler(struct work_struct *work)
+@@ -498,6 +506,10 @@ static int mlxsw_i2c_cmd_exec(void *bus_priv, u16 opcode, u8 opcode_mod,
+ {
+ 	struct mlxsw_i2c *mlxsw_i2c = bus_priv;
+ 
++	if (mlxsw_i2c->access_prohibited) {
++dev_info(mlxsw_i2c->bus_info.dev, "Access prohibited\n");
++		return -EBUSY;}
++
+ 	return mlxsw_i2c_cmd(mlxsw_i2c->dev, opcode, in_mod, in_mbox_size,
+ 			     in_mbox, out_mbox_size, out_mbox, status);
+ }
+@@ -562,6 +574,12 @@ static void mlxsw_i2c_work_handler(struct work_struct *work)
  	unsigned long flags;
  
  	mlxsw_i2c = container_of(work, struct mlxsw_i2c, dwork_irq.work);
@@ -1023,7 +1043,7 @@ index 10754f704..2d6f85797 100644
  	mlxsw_i2c->sys_event_handler(mlxsw_i2c->core);
  
  	spin_lock_irqsave(&mlxsw_i2c->lock, flags);
-@@ -574,9 +586,12 @@ static void mlxsw_i2c_work_handler(struct work_struct *work)
+@@ -574,9 +592,12 @@ static void mlxsw_i2c_work_handler(struct work_struct *work)
  	 * signals have been received during masking.
  	 */
  	cancel_delayed_work(&mlxsw_i2c->dwork_irq);
@@ -1037,7 +1057,7 @@ index 10754f704..2d6f85797 100644
  }
  
  static irqreturn_t mlxsw_i2c_irq_handler(int irq, void *dev)
-@@ -586,7 +601,7 @@ static irqreturn_t mlxsw_i2c_irq_handler(int irq, void *dev)
+@@ -586,7 +607,7 @@ static irqreturn_t mlxsw_i2c_irq_handler(int irq, void *dev)
  	/* Schedule work task for immediate execution.*/
  	schedule_delayed_work(&mlxsw_i2c->dwork_irq, 0);
  
@@ -1046,7 +1066,7 @@ index 10754f704..2d6f85797 100644
  }
  
  static int mlxsw_i2c_event_handler_register(struct mlxsw_i2c *mlxsw_i2c)
-@@ -617,7 +632,8 @@ static void mlxsw_i2c_event_handler_unregister(struct mlxsw_i2c *mlxsw_i2c)
+@@ -617,7 +638,8 @@ static void mlxsw_i2c_event_handler_unregister(struct mlxsw_i2c *mlxsw_i2c)
  {
  	if (!IS_REACHABLE(CONFIG_MLXREG_HOTPLUG) || !mlxsw_i2c->pdata || !mlxsw_i2c->pdata->irq)
  		return;
@@ -1056,7 +1076,7 @@ index 10754f704..2d6f85797 100644
  	devm_free_irq(mlxsw_i2c->bus_info.dev, mlxsw_i2c->pdata->irq, mlxsw_i2c);
  }
  
-@@ -727,6 +743,7 @@ static int mlxsw_i2c_probe(struct i2c_client *client,
+@@ -727,6 +749,7 @@ static int mlxsw_i2c_probe(struct i2c_client *client,
  	if (err)
  		return err;
  
@@ -1064,15 +1084,16 @@ index 10754f704..2d6f85797 100644
  	dev_info(&client->dev, "Firmware revision: %d.%d.%d\n",
  		 mlxsw_i2c->bus_info.fw_rev.major,
  		 mlxsw_i2c->bus_info.fw_rev.minor,
-@@ -743,8 +760,10 @@ errout:
+@@ -743,8 +766,11 @@ errout:
  static int mlxsw_i2c_remove(struct i2c_client *client)
  {
  	struct mlxsw_i2c *mlxsw_i2c = i2c_get_clientdata(client);
 -
 +printk("%s(%d)\n", __func__, __LINE__);
++	mlxsw_i2c->access_prohibited = 1;
 +	atomic_set(&mlxsw_i2c->irq_unhandled_count, MLXSW_I2C_WORK_CLOSED);
  	mlxsw_i2c_event_handler_unregister(mlxsw_i2c);
-+printk("%s(%d)\n", __func__, __LINE__);
++printk("%s(%d) mlxsw_i2c->access_prohibited %d\n", __func__, __LINE__, mlxsw_i2c->access_prohibited);
  	mlxsw_core_bus_device_unregister(mlxsw_i2c->core, false);
  	mutex_destroy(&mlxsw_i2c->cmd.lock);
  
