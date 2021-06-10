@@ -33,7 +33,7 @@ default:
 
     # pick one of the above kernels
     kernel:
-      <<: *kernel-4-19
+      <<: *kernel-5-10
 
     # GRUB command line arguments for 'serial' declaration
     # this is equivalent to, but not in the same format as,
