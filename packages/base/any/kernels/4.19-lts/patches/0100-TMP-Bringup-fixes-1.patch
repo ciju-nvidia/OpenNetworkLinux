@@ -1,6 +1,6 @@
-From 5e3a1f0127703d9da0f9f889e8c5fc11f414dfe7 Mon Sep 17 00:00:00 2001
+From f3cd9bc77c7b86a27ab1bd96217f023f7eff8b87 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Thu, 10 Jun 2021 21:01:59 +0300
+Date: Sun, 13 Jun 2021 18:15:19 +0300
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
@@ -13,14 +13,14 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   |  24 +-
  .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 256 ++++++++++++++-------
  drivers/net/ethernet/mellanox/mlxsw/core_thermal.c |  62 +++--
- drivers/net/ethernet/mellanox/mlxsw/i2c.c          |  34 ++-
- drivers/net/ethernet/mellanox/mlxsw/minimal.c      | 113 ++++++---
+ drivers/net/ethernet/mellanox/mlxsw/i2c.c          |  36 ++-
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c      | 108 ++++++---
  drivers/net/ethernet/mellanox/mlxsw/reg.h          | 179 ++++++++++----
- drivers/platform/mellanox/mlxreg-hotplug.c         |  15 +-
+ drivers/platform/mellanox/mlxreg-hotplug.c         |  13 +-
  drivers/platform/mellanox/mlxreg-lc.c              | 171 +++++++++++---
  drivers/platform/x86/mlx-platform.c                | 116 +++++++++-
  include/linux/platform_data/mlxreg.h               |  19 ++
- 15 files changed, 799 insertions(+), 279 deletions(-)
+ 15 files changed, 794 insertions(+), 279 deletions(-)
 
 diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
 index 19490058b..08aed5912 100644
@@ -987,7 +987,7 @@ index ee4c0c5d9..114253686 100644
  	mlxsw_thermal_gearboxes_main_fini(thermal->main);
  err_thermal_gearboxes_main_init:
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/i2c.c b/drivers/net/ethernet/mellanox/mlxsw/i2c.c
-index 10754f704..9f2dcb7f5 100644
+index 10754f704..251eb6a5c 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/i2c.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/i2c.c
 @@ -52,6 +52,10 @@
@@ -1066,17 +1066,30 @@ index 10754f704..9f2dcb7f5 100644
  }
  
  static int mlxsw_i2c_event_handler_register(struct mlxsw_i2c *mlxsw_i2c)
-@@ -617,7 +638,8 @@ static void mlxsw_i2c_event_handler_unregister(struct mlxsw_i2c *mlxsw_i2c)
+@@ -599,8 +620,9 @@ static int mlxsw_i2c_event_handler_register(struct mlxsw_i2c *mlxsw_i2c)
+ 	if (!IS_REACHABLE(CONFIG_MLXREG_HOTPLUG) || !mlxsw_i2c->pdata || !mlxsw_i2c->pdata->irq)
+ 		return 0;
+ 
+-	err = devm_request_irq(mlxsw_i2c->dev, mlxsw_i2c->pdata->irq, mlxsw_i2c_irq_handler,
+-			       IRQF_TRIGGER_FALLING | IRQF_SHARED, "mlxsw-i2c", mlxsw_i2c);
++	err = request_irq(mlxsw_i2c->pdata->irq, mlxsw_i2c_irq_handler,
++			  IRQF_TRIGGER_FALLING | IRQF_SHARED, "mlxsw-i2c",
++			  mlxsw_i2c);
+ 	if (err) {
+ 		dev_err(mlxsw_i2c->bus_info.dev, "Failed to request irq: %d\n",
+ 			err);
+@@ -617,8 +639,9 @@ static void mlxsw_i2c_event_handler_unregister(struct mlxsw_i2c *mlxsw_i2c)
  {
  	if (!IS_REACHABLE(CONFIG_MLXREG_HOTPLUG) || !mlxsw_i2c->pdata || !mlxsw_i2c->pdata->irq)
  		return;
--
-+printk("%s(%d)\n", __func__, __LINE__);
-+	cancel_delayed_work(&mlxsw_i2c->dwork_irq);
- 	devm_free_irq(mlxsw_i2c->bus_info.dev, mlxsw_i2c->pdata->irq, mlxsw_i2c);
++	cancel_delayed_work_sync(&mlxsw_i2c->dwork_irq);
++	free_irq(mlxsw_i2c->pdata->irq, mlxsw_i2c);
+ 
+-	devm_free_irq(mlxsw_i2c->bus_info.dev, mlxsw_i2c->pdata->irq, mlxsw_i2c);
  }
  
-@@ -727,6 +749,7 @@ static int mlxsw_i2c_probe(struct i2c_client *client,
+ static const struct mlxsw_bus mlxsw_i2c_bus = {
+@@ -727,6 +750,7 @@ static int mlxsw_i2c_probe(struct i2c_client *client,
  	if (err)
  		return err;
  
@@ -1084,21 +1097,17 @@ index 10754f704..9f2dcb7f5 100644
  	dev_info(&client->dev, "Firmware revision: %d.%d.%d\n",
  		 mlxsw_i2c->bus_info.fw_rev.major,
  		 mlxsw_i2c->bus_info.fw_rev.minor,
-@@ -743,8 +766,11 @@ errout:
- static int mlxsw_i2c_remove(struct i2c_client *client)
+@@ -744,6 +768,8 @@ static int mlxsw_i2c_remove(struct i2c_client *client)
  {
  	struct mlxsw_i2c *mlxsw_i2c = i2c_get_clientdata(client);
--
-+printk("%s(%d)\n", __func__, __LINE__);
+ 
 +	mlxsw_i2c->access_prohibited = 1;
 +	atomic_set(&mlxsw_i2c->irq_unhandled_count, MLXSW_I2C_WORK_CLOSED);
  	mlxsw_i2c_event_handler_unregister(mlxsw_i2c);
-+printk("%s(%d) mlxsw_i2c->access_prohibited %d\n", __func__, __LINE__, mlxsw_i2c->access_prohibited);
  	mlxsw_core_bus_device_unregister(mlxsw_i2c->core, false);
  	mutex_destroy(&mlxsw_i2c->cmd.lock);
- 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index 604daaa18..a738dea66 100644
+index 604daaa18..a2b92b6ea 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 @@ -31,6 +31,7 @@ struct mlxsw_m {
@@ -1329,15 +1338,6 @@ index 604daaa18..a738dea66 100644
  };
  
  static int mlxsw_m_linecards_register(struct mlxsw_m *mlxsw_m)
-@@ -356,7 +398,7 @@ static int mlxsw_m_linecards_register(struct mlxsw_m *mlxsw_m)
- 
- 	if (!linecards || !linecards->count)
- 		return 0;
--
-+printk("%s linecards->count %d\n", __func__, linecards->count);
- 	mlxsw_m->linecards = kcalloc(linecards->count, sizeof(*mlxsw_m->linecards),
- 				     GFP_KERNEL);
- 	if (!mlxsw_m->linecards)
 @@ -368,6 +410,8 @@ static int mlxsw_m_linecards_register(struct mlxsw_m *mlxsw_m)
  	if (err)
  		goto err_linecards_event_ops_register;
@@ -1347,27 +1347,15 @@ index 604daaa18..a738dea66 100644
  	return 0;
  
  err_linecards_event_ops_register:
-@@ -381,6 +425,8 @@ static void mlxsw_m_linecards_unregister(struct mlxsw_m *mlxsw_m)
- 
+@@ -382,6 +426,8 @@ static void mlxsw_m_linecards_unregister(struct mlxsw_m *mlxsw_m)
  	if (!linecards || !linecards->count)
  		return;
-+printk("%s(%d)\n", __func__, __LINE__);
-+	mlxsw_m->linecards_registered = 0;
  
++	mlxsw_m->linecards_registered = 0;
++
  	mlxsw_linecards_event_ops_unregister(mlxsw_m->core,
  					     &mlxsw_m_event_ops, mlxsw_m);
-@@ -425,9 +471,10 @@ err_linecards_register:
- static void mlxsw_m_fini(struct mlxsw_core *mlxsw_core)
- {
- 	struct mlxsw_m *mlxsw_m = mlxsw_core_driver_priv(mlxsw_core);
--
-+printk("%s(%d)\n", __func__, __LINE__);
- 	mlxsw_m_linecards_unregister(mlxsw_m);
- 	mlxsw_m_ports_remove(mlxsw_m->main);
-+printk("%s(%d)\n", __func__, __LINE__);
- }
- 
- static const struct mlxsw_config_profile mlxsw_m_config_profile;
+ 	kfree(mlxsw_m->linecards);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/reg.h b/drivers/net/ethernet/mellanox/mlxsw/reg.h
 index bb2a1420d..e9d1ab7c5 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/reg.h
@@ -1666,7 +1654,7 @@ index bb2a1420d..e9d1ab7c5 100644
  }
  
 diff --git a/drivers/platform/mellanox/mlxreg-hotplug.c b/drivers/platform/mellanox/mlxreg-hotplug.c
-index 13a6a6811..bb1d001de 100644
+index 13a6a6811..5deffeadf 100644
 --- a/drivers/platform/mellanox/mlxreg-hotplug.c
 +++ b/drivers/platform/mellanox/mlxreg-hotplug.c
 @@ -121,7 +121,7 @@ static int mlxreg_hotplug_device_create(struct mlxreg_hotplug_priv_data *priv,
@@ -1698,24 +1686,22 @@ index 13a6a6811..bb1d001de 100644
  
  	return 0;
  }
-@@ -182,6 +184,9 @@ mlxreg_hotplug_device_destroy(struct mlxreg_hotplug_priv_data *priv,
+@@ -182,6 +184,8 @@ mlxreg_hotplug_device_destroy(struct mlxreg_hotplug_priv_data *priv,
  {
  	/* Notify user by sending hwmon uevent. */
  	mlxreg_hotplug_udev_event_send(&priv->hwmon->kobj, data, false);
-+dev_info(priv->dev, "label %s action %d kind %d client %p\n", data->label, data->hpdev.action, kind, data->hpdev.client);
-+	if (data->hpdev.user_handler)
-+		data->hpdev.user_handler(data->hpdev.handle, kind, 0);
++	if (data->hpdev.notifier && data->hpdev.notifier->user_handler)
++		data->hpdev.notifier->user_handler(data->hpdev.notifier->handle, kind, 0);
  
  	switch (data->hpdev.action) {
  	case MLXREG_HOTPLUG_DEVICE_DEFAULT_ACTION:
-@@ -203,8 +208,8 @@ mlxreg_hotplug_device_destroy(struct mlxreg_hotplug_priv_data *priv,
+@@ -202,9 +206,6 @@ mlxreg_hotplug_device_destroy(struct mlxreg_hotplug_priv_data *priv,
+ 	default:
  		break;
  	}
- 
+-
 -	if (data->hpdev.user_handler)
 -		data->hpdev.user_handler(data->hpdev.handle, kind, 0);
-+	if (data->hpdev.notifier && data->hpdev.notifier->user_handler)
-+		data->hpdev.notifier->user_handler(data->hpdev.notifier->handle, kind, 0);
  }
  
  static ssize_t mlxreg_hotplug_attr_show(struct device *dev,
