@@ -1,6 +1,6 @@
-From f3cd9bc77c7b86a27ab1bd96217f023f7eff8b87 Mon Sep 17 00:00:00 2001
+From 4b04152c88736956d4599787995a5b7034beabd9 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Sun, 13 Jun 2021 18:15:19 +0300
+Date: Mon, 14 Jun 2021 19:37:12 +0300
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
@@ -11,16 +11,17 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  drivers/net/ethernet/mellanox/mlxsw/core.h         |  20 +-
  drivers/net/ethernet/mellanox/mlxsw/core_env.c     |  20 +-
  drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c   |  24 +-
- .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 256 ++++++++++++++-------
+ .../net/ethernet/mellanox/mlxsw/core_linecards.c   | 256 ++++++++++++-------
  drivers/net/ethernet/mellanox/mlxsw/core_thermal.c |  62 +++--
  drivers/net/ethernet/mellanox/mlxsw/i2c.c          |  36 ++-
- drivers/net/ethernet/mellanox/mlxsw/minimal.c      | 108 ++++++---
- drivers/net/ethernet/mellanox/mlxsw/reg.h          | 179 ++++++++++----
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c      | 108 +++++---
+ drivers/net/ethernet/mellanox/mlxsw/qsfp_sysfs.c   |   6 +-
+ drivers/net/ethernet/mellanox/mlxsw/reg.h          | 179 +++++++++++---
  drivers/platform/mellanox/mlxreg-hotplug.c         |  13 +-
- drivers/platform/mellanox/mlxreg-lc.c              | 171 +++++++++++---
- drivers/platform/x86/mlx-platform.c                | 116 +++++++++-
+ drivers/platform/mellanox/mlxreg-lc.c              | 171 ++++++++++---
+ drivers/platform/x86/mlx-platform.c                | 274 ++++++++++++++++++++-
  include/linux/platform_data/mlxreg.h               |  19 ++
- 15 files changed, 794 insertions(+), 279 deletions(-)
+ 16 files changed, 956 insertions(+), 281 deletions(-)
 
 diff --git a/drivers/hwmon/pmbus/mp2975.c b/drivers/hwmon/pmbus/mp2975.c
 index 19490058b..08aed5912 100644
@@ -1356,6 +1357,30 @@ index 604daaa18..a2b92b6ea 100644
  	mlxsw_linecards_event_ops_unregister(mlxsw_m->core,
  					     &mlxsw_m_event_ops, mlxsw_m);
  	kfree(mlxsw_m->linecards);
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/qsfp_sysfs.c b/drivers/net/ethernet/mellanox/mlxsw/qsfp_sysfs.c
+index 931dbd58e..32c46478b 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/qsfp_sysfs.c
++++ b/drivers/net/ethernet/mellanox/mlxsw/qsfp_sysfs.c
+@@ -117,7 +117,8 @@ int mlxsw_qsfp_init(struct mlxsw_core *mlxsw_core,
+ 	if (!strcmp(mlxsw_bus_info->device_kind, "i2c"))
+ 		return 0;
+ 
+-	dmi_check_system(mlxsw_qsfp_dmi_table);
++	if (!dmi_check_system(mlxsw_qsfp_dmi_table))
++		return;
+ 
+ 	mlxsw_qsfp = devm_kzalloc(mlxsw_bus_info->dev, sizeof(*mlxsw_qsfp),
+ 				  GFP_KERNEL);
+@@ -165,6 +166,9 @@ void mlxsw_qsfp_fini(struct mlxsw_qsfp *mlxsw_qsfp)
+ {
+ 	int i;
+ 
++	if (!dmi_check_system(mlxsw_qsfp_dmi_table))
++		return;
++
+ 	for (i = 0; i < mlxsw_qsfp_cpld_num; i++)
+ 		sysfs_remove_file(&mlxsw_qsfp->bus_info->dev->kobj,
+ 				  mlxsw_qsfp->cpld_attrs[i]);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/reg.h b/drivers/net/ethernet/mellanox/mlxsw/reg.h
 index bb2a1420d..e9d1ab7c5 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/reg.h
@@ -2016,10 +2041,18 @@ index 513cf4d35..f28a40de9 100644
  
  	/* Configure line card. */
 diff --git a/drivers/platform/x86/mlx-platform.c b/drivers/platform/x86/mlx-platform.c
-index 0f5d78105..b51d950f8 100644
+index 0f5d78105..c8ba42cd2 100644
 --- a/drivers/platform/x86/mlx-platform.c
 +++ b/drivers/platform/x86/mlx-platform.c
-@@ -231,7 +231,6 @@
+@@ -40,6 +40,7 @@
+ #define MLXPLAT_CPLD_LPC_REG_LED4_OFFSET	0x23
+ #define MLXPLAT_CPLD_LPC_REG_LED5_OFFSET	0x24
+ #define MLXPLAT_CPLD_LPC_REG_LED6_OFFSET	0x25
++#define MLXPLAT_CPLD_LPC_REG_LED7_OFFSET	0x26
+ #define MLXPLAT_CPLD_LPC_REG_FAN_DIRECTION	0x2a
+ #define MLXPLAT_CPLD_LPC_REG_GP0_RO_OFFSET	0x2b
+ #define MLXPLAT_CPLD_LPC_REG_GPCOM0_OFFSET	0x2d
+@@ -231,7 +232,6 @@
  #define MLXPLAT_CPLD_NR_NONE			-1
  #define MLXPLAT_CPLD_PSU_DEFAULT_NR		10
  #define MLXPLAT_CPLD_PSU_MSNXXXX_NR		4
@@ -2027,7 +2060,7 @@ index 0f5d78105..b51d950f8 100644
  #define MLXPLAT_CPLD_FAN1_DEFAULT_NR		11
  #define MLXPLAT_CPLD_FAN2_DEFAULT_NR		12
  #define MLXPLAT_CPLD_FAN3_DEFAULT_NR		13
-@@ -1205,28 +1204,28 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_pwr_items_data[] = {
+@@ -1205,28 +1205,28 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_pwr_items_data[] = {
  		.reg = MLXPLAT_CPLD_LPC_REG_PWR_OFFSET,
  		.mask = BIT(0),
  		.hpdev.brdinfo = &mlxplat_mlxcpld_pwr[0],
@@ -2060,7 +2093,7 @@ index 0f5d78105..b51d950f8 100644
  	},
  };
  
-@@ -1287,14 +1286,41 @@ static struct i2c_board_info mlxplat_mlxcpld_lc_i2c_dev[] = {
+@@ -1287,14 +1287,41 @@ static struct i2c_board_info mlxplat_mlxcpld_lc_i2c_dev[] = {
  	},
  };
  
@@ -2103,7 +2136,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 1,
  	},
  	{
-@@ -1304,6 +1330,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
+@@ -1304,6 +1331,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[1],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(1),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2111,7 +2144,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 2,
  	},
  	{
-@@ -1313,6 +1340,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
+@@ -1313,6 +1341,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[2],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(2),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2119,7 +2152,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 3,
  	},
  	{
-@@ -1322,6 +1350,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
+@@ -1322,6 +1351,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[3],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(3),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2127,7 +2160,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 4,
  	},
  	{
-@@ -1331,6 +1360,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
+@@ -1331,6 +1361,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[4],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(4),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2135,7 +2168,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 5,
  	},
  	{
-@@ -1340,6 +1370,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
+@@ -1340,6 +1371,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[5],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(5),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2143,7 +2176,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 6,
  	},
  	{
-@@ -1349,6 +1380,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
+@@ -1349,6 +1381,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[6],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(6),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2151,7 +2184,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 7,
  	},
  	{
-@@ -1358,6 +1390,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
+@@ -1358,6 +1391,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pr_items_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[7],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(7),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2159,7 +2192,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 8,
  	},
  };
-@@ -1368,11 +1401,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
+@@ -1368,11 +1402,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
  		.reg = MLXPLAT_CPLD_LPC_REG_LC_VR_OFFSET,
  		.mask = BIT(0),
  		.reg_prsnt = MLXPLAT_CPLD_LPC_REG_LC_PG_OFFSET,
@@ -2173,7 +2206,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 1,
  	},
  	{
-@@ -1380,11 +1415,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
+@@ -1380,11 +1416,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
  		.reg = MLXPLAT_CPLD_LPC_REG_LC_VR_OFFSET,
  		.mask = BIT(1),
  		.reg_prsnt = MLXPLAT_CPLD_LPC_REG_LC_PG_OFFSET,
@@ -2187,7 +2220,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 2,
  	},
  	{
-@@ -1392,11 +1429,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
+@@ -1392,11 +1430,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
  		.reg = MLXPLAT_CPLD_LPC_REG_LC_VR_OFFSET,
  		.mask = BIT(2),
  		.reg_prsnt = MLXPLAT_CPLD_LPC_REG_LC_PG_OFFSET,
@@ -2201,7 +2234,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 3,
  	},
  	{
-@@ -1404,11 +1443,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
+@@ -1404,11 +1444,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
  		.reg = MLXPLAT_CPLD_LPC_REG_LC_VR_OFFSET,
  		.mask = BIT(3),
  		.reg_prsnt = MLXPLAT_CPLD_LPC_REG_LC_PG_OFFSET,
@@ -2215,7 +2248,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 4,
  	},
  	{
-@@ -1416,11 +1457,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
+@@ -1416,11 +1458,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
  		.reg = MLXPLAT_CPLD_LPC_REG_LC_VR_OFFSET,
  		.mask = BIT(4),
  		.reg_prsnt = MLXPLAT_CPLD_LPC_REG_LC_PG_OFFSET,
@@ -2229,7 +2262,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 5,
  	},
  	{
-@@ -1428,11 +1471,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
+@@ -1428,11 +1472,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
  		.reg = MLXPLAT_CPLD_LPC_REG_LC_VR_OFFSET,
  		.mask = BIT(5),
  		.reg_prsnt = MLXPLAT_CPLD_LPC_REG_LC_PG_OFFSET,
@@ -2243,7 +2276,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 6,
  	},
  	{
-@@ -1440,11 +1485,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
+@@ -1440,11 +1486,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
  		.reg = MLXPLAT_CPLD_LPC_REG_LC_VR_OFFSET,
  		.mask = BIT(6),
  		.reg_prsnt = MLXPLAT_CPLD_LPC_REG_LC_PG_OFFSET,
@@ -2257,7 +2290,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 7,
  	},
  	{
-@@ -1452,11 +1499,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
+@@ -1452,11 +1500,13 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ver_items_data[] = {
  		.reg = MLXPLAT_CPLD_LPC_REG_LC_VR_OFFSET,
  		.mask = BIT(7),
  		.reg_prsnt = MLXPLAT_CPLD_LPC_REG_LC_PG_OFFSET,
@@ -2271,7 +2304,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 8,
  	},
  };
-@@ -1469,6 +1518,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
+@@ -1469,6 +1519,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[0],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(0),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2279,7 +2312,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 1,
  	},
  	{
-@@ -1478,6 +1528,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
+@@ -1478,6 +1529,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[1],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(1),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2287,7 +2320,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 2,
  	},
  	{
-@@ -1487,6 +1538,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
+@@ -1487,6 +1539,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[2],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(2),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2295,7 +2328,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 3,
  	},
  	{
-@@ -1496,6 +1548,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
+@@ -1496,6 +1549,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[3],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(3),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2303,7 +2336,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 4,
  	},
  	{
-@@ -1505,6 +1558,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
+@@ -1505,6 +1559,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[4],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(4),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2311,7 +2344,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 5,
  	},
  	{
-@@ -1514,6 +1568,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
+@@ -1514,6 +1569,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[5],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(5),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2319,7 +2352,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 6,
  	},
  	{
-@@ -1523,6 +1578,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
+@@ -1523,6 +1579,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[6],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(6),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2327,7 +2360,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 7,
  	},
  	{
-@@ -1532,6 +1588,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
+@@ -1532,6 +1589,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_pg_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[7],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(7),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2335,7 +2368,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 8,
  	},
  };
-@@ -1544,6 +1601,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
+@@ -1544,6 +1602,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[0],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(0),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2343,7 +2376,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 1,
  	},
  	{
-@@ -1553,6 +1611,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
+@@ -1553,6 +1612,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[1],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(1),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2351,7 +2384,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 2,
  	},
  	{
-@@ -1562,6 +1621,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
+@@ -1562,6 +1622,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[2],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(2),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2359,7 +2392,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 3,
  	},
  	{
-@@ -1571,6 +1631,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
+@@ -1571,6 +1632,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[3],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(3),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2367,7 +2400,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 4,
  	},
  	{
-@@ -1580,6 +1641,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
+@@ -1580,6 +1642,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[4],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(4),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2375,7 +2408,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 5,
  	},
  	{
-@@ -1589,6 +1651,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
+@@ -1589,6 +1652,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[5],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(5),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2383,7 +2416,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 6,
  	},
  	{
-@@ -1598,6 +1661,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
+@@ -1598,6 +1662,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[6],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(6),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2391,7 +2424,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 7,
  	},
  	{
-@@ -1607,6 +1671,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
+@@ -1607,6 +1672,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_ready_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[7],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(7),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2399,7 +2432,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 8,
  	},
  };
-@@ -1619,6 +1684,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
+@@ -1619,6 +1685,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[0],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(0),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2407,7 +2440,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 1,
  	},
  	{
-@@ -1628,6 +1694,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
+@@ -1628,6 +1695,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[1],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(1),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2415,7 +2448,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 2,
  	},
  	{
-@@ -1637,6 +1704,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
+@@ -1637,6 +1705,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[2],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(2),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2423,7 +2456,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 3,
  	},
  	{
-@@ -1646,6 +1714,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
+@@ -1646,6 +1715,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[3],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(3),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2431,7 +2464,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 4,
  	},
  	{
-@@ -1655,6 +1724,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
+@@ -1655,6 +1725,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[4],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(4),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2439,7 +2472,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 5,
  	},
  	{
-@@ -1664,6 +1734,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
+@@ -1664,6 +1735,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[5],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(5),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2447,7 +2480,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 6,
  	},
  	{
-@@ -1673,6 +1744,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
+@@ -1673,6 +1745,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[6],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(6),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2455,7 +2488,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 7,
  	},
  	{
-@@ -1682,6 +1754,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
+@@ -1682,6 +1755,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_synced_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[7],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(7),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2463,7 +2496,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 8,
  	},
  };
-@@ -1694,6 +1767,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
+@@ -1694,6 +1768,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[0],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(0),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2471,7 +2504,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 1,
  	},
  	{
-@@ -1703,6 +1777,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
+@@ -1703,6 +1778,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[1],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(1),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2479,7 +2512,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 2,
  	},
  	{
-@@ -1712,6 +1787,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
+@@ -1712,6 +1788,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[2],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(2),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2487,7 +2520,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 3,
  	},
  	{
-@@ -1721,6 +1797,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
+@@ -1721,6 +1798,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[3],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(3),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2495,7 +2528,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 4,
  	},
  	{
-@@ -1730,6 +1807,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
+@@ -1730,6 +1808,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[4],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(4),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2503,7 +2536,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 5,
  	},
  	{
-@@ -1739,6 +1817,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
+@@ -1739,6 +1818,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[5],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(5),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2511,7 +2544,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 6,
  	},
  	{
-@@ -1748,6 +1827,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
+@@ -1748,6 +1828,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[6],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(6),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2519,7 +2552,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 7,
  	},
  	{
-@@ -1757,6 +1837,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
+@@ -1757,6 +1838,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_act_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[7],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(7),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2527,7 +2560,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 8,
  	},
  };
-@@ -1769,6 +1850,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
+@@ -1769,6 +1851,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[0],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(0),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2535,7 +2568,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 1,
  	},
  	{
-@@ -1778,6 +1860,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
+@@ -1778,6 +1861,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[1],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(1),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2543,7 +2576,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 2,
  	},
  	{
-@@ -1787,6 +1870,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
+@@ -1787,6 +1871,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[2],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(2),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2551,7 +2584,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 3,
  	},
  	{
-@@ -1796,6 +1880,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
+@@ -1796,6 +1881,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[3],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(3),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2559,7 +2592,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 4,
  	},
  	{
-@@ -1805,6 +1890,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
+@@ -1805,6 +1891,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[4],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(4),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2567,7 +2600,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 5,
  	},
  	{
-@@ -1814,6 +1900,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
+@@ -1814,6 +1901,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[5],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(5),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2575,7 +2608,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 6,
  	},
  	{
-@@ -1823,6 +1910,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
+@@ -1823,6 +1911,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[6],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(6),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2583,7 +2616,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 7,
  	},
  	{
-@@ -1832,6 +1920,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
+@@ -1832,6 +1921,7 @@ static struct mlxreg_core_data mlxplat_mlxcpld_modular_lc_sd_data[] = {
  		.hpdev.brdinfo = &mlxplat_mlxcpld_lc_i2c_dev[7],
  		.hpdev.nr = MLXPLAT_CPLD_NR_LC_SET(7),
  		.hpdev.action = MLXREG_HOTPLUG_DEVICE_NO_ACTION,
@@ -2591,7 +2624,7 @@ index 0f5d78105..b51d950f8 100644
  		.slot = 8,
  	},
  };
-@@ -1882,7 +1971,7 @@ static struct mlxreg_core_item mlxplat_mlxcpld_modular_items[] = {
+@@ -1882,7 +1972,7 @@ static struct mlxreg_core_item mlxplat_mlxcpld_modular_items[] = {
  		.reg = MLXPLAT_CPLD_LPC_REG_LC_IN_OFFSET,
  		.mask = MLXPLAT_CPLD_LPC_LC_MASK,
  		.count = ARRAY_SIZE(mlxplat_mlxcpld_modular_lc_pr_items_data),
@@ -2600,7 +2633,166 @@ index 0f5d78105..b51d950f8 100644
  		.health = false,
  	},
  	{
-@@ -3877,6 +3966,7 @@ static struct mlxreg_core_platform_data mlxplat_mlxcpld_wd_set_type3[] = {
+@@ -2404,6 +2494,158 @@ static struct mlxreg_core_platform_data mlxplat_comex_100G_led_data = {
+ 		.counter = ARRAY_SIZE(mlxplat_mlxcpld_comex_100G_led_data),
+ };
+ 
++/* Platform led for data for modular systems */
++static struct mlxreg_core_data mlxplat_mlxcpld_modular_led_data[] = {
++	{
++		.label = "status:green",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED1_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++	},
++	{
++		.label = "status:orange",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED1_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK
++	},
++	{
++		.label = "psu:green",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED1_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_HI_NIBBLE_MASK,
++	},
++	{
++		.label = "psu:orange",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED1_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_HI_NIBBLE_MASK,
++	},
++	{
++		.label = "fan1:green",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED2_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(0),
++	},
++	{
++		.label = "fan1:orange",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED2_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(0),
++	},
++	{
++		.label = "fan2:green",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED2_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_HI_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(1),
++	},
++	{
++		.label = "fan2:orange",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED2_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_HI_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(1),
++	},
++	{
++		.label = "fan3:green",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED3_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(2),
++	},
++	{
++		.label = "fan3:orange",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED3_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(2),
++	},
++	{
++		.label = "fan4:green",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED3_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_HI_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(3),
++	},
++	{
++		.label = "fan4:orange",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED3_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_HI_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(3),
++	},
++	{
++		.label = "fan5:green",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED4_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(4),
++	},
++	{
++		.label = "fan5:orange",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED4_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(4),
++	},
++	{
++		.label = "fan6:green",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED4_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_HI_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(5),
++	},
++	{
++		.label = "fan6:orange",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED4_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_HI_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(5),
++	},
++	{
++		.label = "fan7:green",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED6_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(6),
++	},
++	{
++		.label = "fan7:orange",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED6_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
++		.bit = BIT(6),
++	},
++	{
++		.label = "uid:blue",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED5_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++	},
++	{
++		.label = "fan_front:green",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED6_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++	},
++	{
++		.label = "fan_front:orange",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED6_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++	},
++	{
++		.label = "mgmt:green",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED7_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++	},
++	{
++		.label = "mgmt:orange",
++		.reg = MLXPLAT_CPLD_LPC_REG_LED7_OFFSET,
++		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++	},
++};
++
++static struct mlxreg_core_platform_data mlxplat_modular_led_data = {
++		.data = mlxplat_mlxcpld_modular_led_data,
++		.counter = ARRAY_SIZE(mlxplat_mlxcpld_modular_led_data),
++};
++
+ /* Platform register access default */
+ static struct mlxreg_core_data mlxplat_mlxcpld_default_regs_io_data[] = {
+ 	{
+@@ -3877,12 +4119,14 @@ static struct mlxreg_core_platform_data mlxplat_mlxcpld_wd_set_type3[] = {
  static bool mlxplat_mlxcpld_writeable_reg(struct device *dev, unsigned int reg)
  {
  	switch (reg) {
@@ -2608,7 +2800,14 @@ index 0f5d78105..b51d950f8 100644
  	case MLXPLAT_CPLD_LPC_REG_LED1_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LED2_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LED3_OFFSET:
-@@ -3906,6 +3996,7 @@ static bool mlxplat_mlxcpld_writeable_reg(struct device *dev, unsigned int reg)
+ 	case MLXPLAT_CPLD_LPC_REG_LED4_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_LED5_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_LED6_OFFSET:
++	case MLXPLAT_CPLD_LPC_REG_LED7_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_GP0_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_GP_RST_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_GP1_OFFSET:
+@@ -3906,6 +4150,7 @@ static bool mlxplat_mlxcpld_writeable_reg(struct device *dev, unsigned int reg)
  	case MLXPLAT_CPLD_LPC_REG_LC_IN_MASK_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LC_VR_EVENT_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LC_VR_MASK_OFFSET:
@@ -2616,7 +2815,7 @@ index 0f5d78105..b51d950f8 100644
  	case MLXPLAT_CPLD_LPC_REG_LC_PG_EVENT_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LC_PG_MASK_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LC_RD_EVENT_OFFSET:
-@@ -3914,6 +4005,9 @@ static bool mlxplat_mlxcpld_writeable_reg(struct device *dev, unsigned int reg)
+@@ -3914,6 +4159,9 @@ static bool mlxplat_mlxcpld_writeable_reg(struct device *dev, unsigned int reg)
  	case MLXPLAT_CPLD_LPC_REG_LC_OK_MASK_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LC_SN_EVENT_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LC_SN_MASK_OFFSET:
@@ -2626,7 +2825,15 @@ index 0f5d78105..b51d950f8 100644
  	case MLXPLAT_CPLD_LPC_REG_WD_CLEAR_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_WD_CLEAR_WP_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_WD1_TMR_OFFSET:
-@@ -4001,6 +4095,10 @@ static bool mlxplat_mlxcpld_readable_reg(struct device *dev, unsigned int reg)
+@@ -3952,6 +4200,7 @@ static bool mlxplat_mlxcpld_readable_reg(struct device *dev, unsigned int reg)
+ 	case MLXPLAT_CPLD_LPC_REG_LED4_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_LED5_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_LED6_OFFSET:
++	case MLXPLAT_CPLD_LPC_REG_LED7_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_FAN_DIRECTION:
+ 	case MLXPLAT_CPLD_LPC_REG_GP0_RO_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_GPCOM0_OFFSET:
+@@ -4001,6 +4250,10 @@ static bool mlxplat_mlxcpld_readable_reg(struct device *dev, unsigned int reg)
  	case MLXPLAT_CPLD_LPC_REG_LC_SN_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LC_SN_EVENT_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LC_SN_MASK_OFFSET:
@@ -2637,7 +2844,15 @@ index 0f5d78105..b51d950f8 100644
  	case MLXPLAT_CPLD_LPC_REG_WD_CLEAR_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_WD_CLEAR_WP_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_WD1_TMR_OFFSET:
-@@ -4113,6 +4211,10 @@ static bool mlxplat_mlxcpld_volatile_reg(struct device *dev, unsigned int reg)
+@@ -4066,6 +4319,7 @@ static bool mlxplat_mlxcpld_volatile_reg(struct device *dev, unsigned int reg)
+ 	case MLXPLAT_CPLD_LPC_REG_LED4_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_LED5_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_LED6_OFFSET:
++	case MLXPLAT_CPLD_LPC_REG_LED7_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_FAN_DIRECTION:
+ 	case MLXPLAT_CPLD_LPC_REG_GP0_RO_OFFSET:
+ 	case MLXPLAT_CPLD_LPC_REG_GPCOM0_OFFSET:
+@@ -4113,6 +4367,10 @@ static bool mlxplat_mlxcpld_volatile_reg(struct device *dev, unsigned int reg)
  	case MLXPLAT_CPLD_LPC_REG_LC_SN_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LC_SN_EVENT_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_LC_SN_MASK_OFFSET:
@@ -2648,6 +2863,15 @@ index 0f5d78105..b51d950f8 100644
  	case MLXPLAT_CPLD_LPC_REG_WD2_TMR_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_WD2_TLEFT_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_WD3_TMR_OFFSET:
+@@ -4493,7 +4751,7 @@ static int __init mlxplat_dmi_modular_matched(const struct dmi_system_id *dmi)
+ 	mlxplat_mux_data = mlxplat_modular_mux_data;
+ 	mlxplat_hotplug = &mlxplat_mlxcpld_modular_data;
+ 	mlxplat_hotplug->deferred_nr = MLXPLAT_CPLD_CH4_ETH_MODULAR;
+-	mlxplat_led = &mlxplat_default_ng_led_data;
++	mlxplat_led = &mlxplat_modular_led_data;
+ 	mlxplat_regs_io = &mlxplat_modular_regs_io_data;
+ 	mlxplat_fan = &mlxplat_default_fan_data;
+ 	for (i = 0; i < ARRAY_SIZE(mlxplat_mlxcpld_wd_set_type2); i++)
 diff --git a/include/linux/platform_data/mlxreg.h b/include/linux/platform_data/mlxreg.h
 index 4b4149256..78bc4bdff 100644
 --- a/include/linux/platform_data/mlxreg.h
