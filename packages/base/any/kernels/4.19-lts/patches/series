@@ -78,4 +78,14 @@ pinctrl-intel-backport-gpio-enable.patch
 0077-mlxsw-reg-Add-new-field-to-Management-General-Periph.patch
 0078-mlxsw-minimal-Add-support-for-setting-line-card-devi.patch
 0079-leds-mlxreg-Provide-conversion-for-hardware-LED-colo.patch
-0100-TMP-Bringup-fixes-1.patch
+0080-platform-x86-mlx-platform-Extend-FAN-and-LED-config-.patch
+0081-mlxsw-core-Set-thermal-zone-polling-delay-argument-t.patch
+0082-mlxsw-reg-Extend-MTMP-register-with-new-threshold-fi.patch
+0083-mlxsw-core_env-Read-module-temperature-thresholds-us.patch
+0084-mlxsw-thermal-Add-function-for-reading-module-temper.patch
+0085-mlxsw-thermal-Read-module-temperature-thresholds-usi.patch
+0086-i2c-mlxcpld-Fix-criteria-for-frequency-setting.patch
+0087-i2c-mlxcpld-Reduce-polling-time-for-I2C-transactions.patch
+0088-hwmon-pmbus-mp2975-Add-missed-POUT-attribute-for-pag.patch
+0100-TMP-platform-mellanox-Extend-platform-with-bring-up-fixe.patch
+0101-TMP-net-mlxsw-Extend-mlxsw-driver-with-bring-up-fixes.patch
