@@ -1,17 +1,31 @@
-From a0cb6be49ee61c724bd61ad36872b34b22a25740 Mon Sep 17 00:00:00 2001
+From c8fc389c4a12d9c764f4acecfd348844519f53a9 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Thu, 17 Jun 2021 15:48:58 +0000
+Date: Thu, 17 Jun 2021 17:46:43 +0000
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
- .../net/ethernet/mellanox/mlxsw/core_hwmon.c  |  9 ++++
+ .../net/ethernet/mellanox/mlxsw/core_env.c    |  3 +-
+ .../net/ethernet/mellanox/mlxsw/core_hwmon.c  |  8 ++++
  .../ethernet/mellanox/mlxsw/core_thermal.c    | 46 ++++++++++++++-----
- drivers/net/ethernet/mellanox/mlxsw/minimal.c | 13 ++++++
- 3 files changed, 56 insertions(+), 12 deletions(-)
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c | 20 ++++++++
+ 4 files changed, 64 insertions(+), 13 deletions(-)
 
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_env.c b/drivers/net/ethernet/mellanox/mlxsw/core_env.c
+index 6f32a663b..48f5b09a4 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/core_env.c
++++ b/drivers/net/ethernet/mellanox/mlxsw/core_env.c
+@@ -353,6 +353,7 @@ EXPORT_SYMBOL(mlxsw_env_sensor_map_create);
+ void mlxsw_env_sensor_map_destroy(const struct mlxsw_bus_info *bus_info,
+ 				  u16 *sensor_bit_map)
+ {
+-	kfree(sensor_bit_map);
++	if (sensor_bit_map)
++		kfree(sensor_bit_map);
+ }
+ EXPORT_SYMBOL(mlxsw_env_sensor_map_destroy);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
-index 1408306b8..e408441e6 100644
+index 1408306b8..9f9e3b445 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
 @@ -814,6 +814,8 @@ printk("%s(%d) linecards->count %d\n", __func__, __LINE__, linecards->count);
@@ -23,7 +37,7 @@ index 1408306b8..e408441e6 100644
  err_linecards_event_ops_register:
  	kfree(hwmon->linecards);
  	return err;
-@@ -822,10 +824,17 @@ err_linecards_event_ops_register:
+@@ -822,10 +824,16 @@ err_linecards_event_ops_register:
  static void mlxsw_hwmon_linecards_unregister(struct mlxsw_hwmon *hwmon)
  {
  	struct mlxsw_linecards *linecards = mlxsw_core_linecards(hwmon->core);
@@ -34,8 +48,7 @@ index 1408306b8..e408441e6 100644
  
 +	for (i = 1; i <= linecards->count; i++) {
 +		if (hwmon->linecards[i - 1])
-+			mlxsw_hwmon_got_inactive(hwmon->core, i, NULL,
-+						   hwmon);
++			mlxsw_hwmon_got_inactive(hwmon->core, i, NULL, hwmon);
 +	}
 +
  	mlxsw_linecards_event_ops_unregister(hwmon->core,
@@ -174,11 +187,14 @@ index bdd292c09..a6f703f9e 100644
  
  int mlxsw_thermal_init(struct mlxsw_core *core,
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index a2b92b6ea..c2bfd5751 100644
+index a2b92b6ea..e20aeb058 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-@@ -386,10 +386,23 @@ printk("%s slot_index %d\n", __func__, slot_index);
+@@ -384,12 +384,26 @@ printk("%s slot_index %d\n", __func__, slot_index);
+ 
+ 	mlxsw_m_ports_remove(lc);
  	kfree(lc);
++	mlxsw_m->linecards[slot_index - 1] = NULL;
  }
  
 +static void
@@ -201,6 +217,23 @@ index a2b92b6ea..c2bfd5751 100644
  
  static int mlxsw_m_linecards_register(struct mlxsw_m *mlxsw_m)
  {
+@@ -422,10 +436,16 @@ err_linecards_event_ops_register:
+ static void mlxsw_m_linecards_unregister(struct mlxsw_m *mlxsw_m)
+ {
+ 	struct mlxsw_linecards *linecards = mlxsw_core_linecards(mlxsw_m->core);
++	int i;
+ 
+ 	if (!linecards || !linecards->count)
+ 		return;
+ 
++	for (i = 1; i <= linecards->count; i++) {
++		if (mlxsw_m->linecards[i - 1])
++			mlxsw_m_got_unprovisioned(mlxsw_m->core, i, NULL, mlxsw_m);
++	}
++
+ 	mlxsw_m->linecards_registered = 0;
+ 
+ 	mlxsw_linecards_event_ops_unregister(mlxsw_m->core,
 -- 
 2.20.1
 
