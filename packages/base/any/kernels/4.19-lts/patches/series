@@ -89,3 +89,4 @@ pinctrl-intel-backport-gpio-enable.patch
 0088-hwmon-pmbus-mp2975-Add-missed-POUT-attribute-for-pag.patch
 0100-TMP-platform-mellanox-Extend-platform-with-bring-up-fixe.patch
 0101-TMP-net-mlxsw-Extend-mlxsw-driver-with-bring-up-fixes.patch
+0100-TMP-Bringup-fixes-1.patch
