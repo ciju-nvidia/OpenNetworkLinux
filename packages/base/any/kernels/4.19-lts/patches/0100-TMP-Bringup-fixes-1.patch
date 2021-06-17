@@ -1,15 +1,15 @@
-From c8fc389c4a12d9c764f4acecfd348844519f53a9 Mon Sep 17 00:00:00 2001
+From 5eee751a856a2e7846094a58700425822d9e0405 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Thu, 17 Jun 2021 17:46:43 +0000
+Date: Thu, 17 Jun 2021 19:31:18 +0000
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
  .../net/ethernet/mellanox/mlxsw/core_env.c    |  3 +-
  .../net/ethernet/mellanox/mlxsw/core_hwmon.c  |  8 ++++
- .../ethernet/mellanox/mlxsw/core_thermal.c    | 46 ++++++++++++++-----
+ .../ethernet/mellanox/mlxsw/core_thermal.c    | 48 ++++++++++++++-----
  drivers/net/ethernet/mellanox/mlxsw/minimal.c | 20 ++++++++
- 4 files changed, 64 insertions(+), 13 deletions(-)
+ 4 files changed, 65 insertions(+), 14 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_env.c b/drivers/net/ethernet/mellanox/mlxsw/core_env.c
 index 6f32a663b..48f5b09a4 100644
@@ -55,7 +55,7 @@ index 1408306b8..9f9e3b445 100644
  					     &mlxsw_hwmon_event_ops, hwmon);
  	kfree(hwmon->linecards);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
-index bdd292c09..a6f703f9e 100644
+index bdd292c09..4685aa83d 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 @@ -90,6 +90,7 @@ struct mlxsw_thermal;
@@ -121,7 +121,7 @@ index bdd292c09..a6f703f9e 100644
  	if (IS_ERR(gearbox_tz->tzdev))
  		return PTR_ERR(gearbox_tz->tzdev);
  
-@@ -1126,6 +1127,7 @@ err_thermal_linecard_env_sensor_map_create:
+@@ -1126,20 +1127,30 @@ err_thermal_linecard_env_sensor_map_create:
  	mlxsw_thermal_modules_fini(thermal, lc);
  err_thermal_linecard_modules_init:
  	kfree(lc);
@@ -129,11 +129,12 @@ index bdd292c09..a6f703f9e 100644
  }
  
  static void mlxsw_thermal_got_inactive(struct mlxsw_core *mlxsw_core, u8 slot_index,
-@@ -1133,13 +1135,22 @@ static void mlxsw_thermal_got_inactive(struct mlxsw_core *mlxsw_core, u8 slot_in
+ 				       const struct mlxsw_linecard *linecard, void *priv)
  {
  	struct mlxsw_thermal *thermal = priv;
- 	struct mlxsw_thermal_area *lc = thermal->linecards[slot_index];
+-	struct mlxsw_thermal_area *lc = thermal->linecards[slot_index];
 -
++	struct mlxsw_thermal_area *lc = thermal->linecards[slot_index - 1];
 +printk("%s(%d) priv %p thermal %p lc %p slot_index %d\n", __func__, __LINE__, priv, thermal, lc, slot_index);
 +if (lc)
 +printk("%s(%d) lc->tz_gearbox_num %d\n", __func__, __LINE__, lc->tz_gearbox_num);
