@@ -1,21 +1,33 @@
-From 73c9dade0a69ddabf4d6b945e18dc62aa45302e5 Mon Sep 17 00:00:00 2001
+From 4dd3e39d0f87adbb7bddb79a9aca3db38f17be12 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Fri, 18 Jun 2021 13:38:47 +0000
+Date: Fri, 18 Jun 2021 14:53:52 +0000
 Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
- .../net/ethernet/mellanox/mlxsw/core_env.c    |  4 ++-
+ .../net/ethernet/mellanox/mlxsw/core_env.c    |  8 +++--
  .../net/ethernet/mellanox/mlxsw/core_hwmon.c  |  8 +++++
  .../ethernet/mellanox/mlxsw/core_thermal.c    | 35 ++++++++++++++-----
  drivers/net/ethernet/mellanox/mlxsw/minimal.c | 20 +++++++++++
- 4 files changed, 58 insertions(+), 9 deletions(-)
+ 4 files changed, 61 insertions(+), 10 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_env.c b/drivers/net/ethernet/mellanox/mlxsw/core_env.c
-index 6f32a663b..ad0d1cf50 100644
+index 6f32a663b..bdd00e766 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_env.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_env.c
-@@ -353,6 +353,8 @@ EXPORT_SYMBOL(mlxsw_env_sensor_map_create);
+@@ -333,8 +333,10 @@ int mlxsw_env_sensor_map_create(struct mlxsw_core *core,
+ 		return err;
+ 
+ 	mlxsw_reg_mtecr_unpack(mtecr_pl, &map->sensor_count, &last_sensor, NULL);
+-	if (!map->sensor_count)
++	if (!map->sensor_count) {
++		map->sensor_bit_map = NULL;
+ 		return 0;
++	}
+ 
+ 	/* Fill out sensor mapping array. */
+ 	map->sensor_bit_map = kcalloc(map->sensor_count, sizeof(u16), GFP_KERNEL);
+@@ -353,6 +355,8 @@ EXPORT_SYMBOL(mlxsw_env_sensor_map_create);
  void mlxsw_env_sensor_map_destroy(const struct mlxsw_bus_info *bus_info,
  				  u16 *sensor_bit_map)
  {
