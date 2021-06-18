@@ -1,18 +1,19 @@
-From 4dd3e39d0f87adbb7bddb79a9aca3db38f17be12 Mon Sep 17 00:00:00 2001
+From 6c6ef6c09d9fa818db523e0a092ebf5186c133ec Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Fri, 18 Jun 2021 14:53:52 +0000
-Subject: [PATCH backport/bringup 4.19 1/1] TMP: Bringup
+Date: Fri, 18 Jun 2021 16:52:50 +0000
+Subject: [PATCH backport/bringup 4.19 1/1] squash to: net: mlxsw: Extend mlxsw
+ driver with bring-up fixes
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
- .../net/ethernet/mellanox/mlxsw/core_env.c    |  8 +++--
- .../net/ethernet/mellanox/mlxsw/core_hwmon.c  |  8 +++++
- .../ethernet/mellanox/mlxsw/core_thermal.c    | 35 ++++++++++++++-----
- drivers/net/ethernet/mellanox/mlxsw/minimal.c | 20 +++++++++++
- 4 files changed, 61 insertions(+), 10 deletions(-)
+ .../net/ethernet/mellanox/mlxsw/core_env.c    |  7 +++--
+ .../net/ethernet/mellanox/mlxsw/core_hwmon.c  | 10 ++++++-
+ .../ethernet/mellanox/mlxsw/core_thermal.c    | 29 ++++++++++++++-----
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c | 22 ++++++++++++--
+ 4 files changed, 55 insertions(+), 13 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_env.c b/drivers/net/ethernet/mellanox/mlxsw/core_env.c
-index 6f32a663b..bdd00e766 100644
+index 6f32a663b..39111620f 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_env.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_env.c
 @@ -333,8 +333,10 @@ int mlxsw_env_sensor_map_create(struct mlxsw_core *core,
@@ -27,20 +28,28 @@ index 6f32a663b..bdd00e766 100644
  
  	/* Fill out sensor mapping array. */
  	map->sensor_bit_map = kcalloc(map->sensor_count, sizeof(u16), GFP_KERNEL);
-@@ -353,6 +355,8 @@ EXPORT_SYMBOL(mlxsw_env_sensor_map_create);
+@@ -353,6 +355,7 @@ EXPORT_SYMBOL(mlxsw_env_sensor_map_create);
  void mlxsw_env_sensor_map_destroy(const struct mlxsw_bus_info *bus_info,
  				  u16 *sensor_bit_map)
  {
 -	kfree(sensor_bit_map);
 +	if (sensor_bit_map)
 +		kfree(sensor_bit_map);
-+printk("%s(%d)\n", __func__, __LINE__);
  }
  EXPORT_SYMBOL(mlxsw_env_sensor_map_destroy);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
-index 1408306b8..9f9e3b445 100644
+index 1408306b8..04ab383ca 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_hwmon.c
+@@ -802,7 +802,7 @@ static int mlxsw_hwmon_linecards_register(struct mlxsw_hwmon *hwmon)
+ 
+ 	if (!linecards || !linecards->count)
+ 		return 0;
+-printk("%s(%d) linecards->count %d\n", __func__, __LINE__, linecards->count);
++
+ 	hwmon->linecards = kcalloc(linecards->count, sizeof(*hwmon->linecards),
+ 				   GFP_KERNEL);
+ 	if (!hwmon->linecards)
 @@ -814,6 +814,8 @@ printk("%s(%d) linecards->count %d\n", __func__, __LINE__, linecards->count);
  	if (err)
  		goto err_linecards_event_ops_register;
@@ -68,7 +77,7 @@ index 1408306b8..9f9e3b445 100644
  					     &mlxsw_hwmon_event_ops, hwmon);
  	kfree(hwmon->linecards);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
-index bdd292c09..c3a5f9c68 100644
+index bdd292c09..e29cf346d 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 @@ -90,6 +90,7 @@ struct mlxsw_thermal;
@@ -115,7 +124,7 @@ index bdd292c09..c3a5f9c68 100644
  	if (IS_ERR(gearbox_tz->tzdev))
  		return PTR_ERR(gearbox_tz->tzdev);
  
-@@ -1126,20 +1127,27 @@ err_thermal_linecard_env_sensor_map_create:
+@@ -1126,20 +1127,23 @@ err_thermal_linecard_env_sensor_map_create:
  	mlxsw_thermal_modules_fini(thermal, lc);
  err_thermal_linecard_modules_init:
  	kfree(lc);
@@ -133,19 +142,15 @@ index bdd292c09..c3a5f9c68 100644
 -	kfree(lc->tz_gearbox_arr);
 +	if (lc->tz_gearbox_arr)
 +		kfree(lc->tz_gearbox_arr);
-+printk("%s(%d) priv %p thermal %p lc->gearbox_sensor_map %p\n", __func__, __LINE__, priv, thermal, lc->gearbox_sensor_map);
  	mlxsw_env_sensor_map_destroy(thermal->bus_info,
  				     lc->gearbox_sensor_map);
-+printk("%s(%d) priv %p thermal %p\n", __func__, __LINE__, priv, thermal);
  	mlxsw_thermal_modules_fini(thermal, lc);
-+printk("%s(%d) priv %p thermal %p\n", __func__, __LINE__, priv, thermal);
  	kfree(lc);
 +	thermal->linecards[slot_index - 1] = NULL;
-+printk("%s(%d)\n", __func__, __LINE__);
  }
  
  static struct mlxsw_linecards_event_ops mlxsw_thermal_event_ops = {
-@@ -1167,6 +1175,8 @@ static int mlxsw_thermal_linecards_register(struct mlxsw_core *mlxsw_core,
+@@ -1167,6 +1171,8 @@ static int mlxsw_thermal_linecards_register(struct mlxsw_core *mlxsw_core,
  	if (err)
  		goto err_linecards_event_ops_register;
  
@@ -154,7 +159,7 @@ index bdd292c09..c3a5f9c68 100644
  err_linecards_event_ops_register:
  	kfree(thermal->linecards);
  	return err;
-@@ -1175,13 +1185,22 @@ err_linecards_event_ops_register:
+@@ -1175,10 +1181,17 @@ err_linecards_event_ops_register:
  static void mlxsw_thermal_linecards_unregister(struct mlxsw_thermal *thermal)
  {
  	struct mlxsw_linecards *linecards = mlxsw_core_linecards(thermal->core);
@@ -162,26 +167,36 @@ index bdd292c09..c3a5f9c68 100644
  
  	if (!linecards || !linecards->count)
  		return;
-+printk("%s(%d) thermal %p\n", __func__, __LINE__, thermal);
-+
+ 
 +	for (i = 1; i <= linecards->count; i++) {
 +		if (thermal->linecards[i - 1])
 +			mlxsw_thermal_got_inactive(thermal->core, i, NULL,
 +						   thermal);
 +	}
- 
++
  	mlxsw_linecards_event_ops_unregister(thermal->core,
  					     &mlxsw_thermal_event_ops, thermal);
  	kfree(thermal->linecards);
-+printk("%s(%d)\n", __func__, __LINE__);
- }
- 
- int mlxsw_thermal_init(struct mlxsw_core *core,
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index a2b92b6ea..e20aeb058 100644
+index a2b92b6ea..14868ebe0 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-@@ -384,12 +384,26 @@ printk("%s slot_index %d\n", __func__, slot_index);
+@@ -351,7 +351,6 @@ mlxsw_m_got_provisioned(struct mlxsw_core *mlxsw_core, u8 slot_index,
+ 	lc->mlxsw_m = mlxsw_m;
+ 	mlxsw_m->linecards[slot_index - 1] = lc;
+ 	err = mlxsw_m_ports_create(lc, slot_index);
+-printk("%s slot_index %d lc->max_ports %d core %p\n", __func__, slot_index, lc->max_ports, lc->mlxsw_m->core);
+ 	if (err) {
+ 		dev_err(mlxsw_m->bus_info->dev, "Failed to set line card at slot %d\n",
+ 			slot_index);
+@@ -377,19 +376,32 @@ mlxsw_m_got_unprovisioned(struct mlxsw_core *mlxsw_core, u8 slot_index,
+ {
+ 	struct mlxsw_m *mlxsw_m = priv;
+ 	struct mlxsw_m_area *lc = mlxsw_m->linecards[slot_index - 1];
+-printk("%s slot_index %d\n", __func__, slot_index);
+ 
+ 	if (!lc)
+ 		return;
  
  	mlxsw_m_ports_remove(lc);
  	kfree(lc);
@@ -208,7 +223,7 @@ index a2b92b6ea..e20aeb058 100644
  
  static int mlxsw_m_linecards_register(struct mlxsw_m *mlxsw_m)
  {
-@@ -422,10 +436,16 @@ err_linecards_event_ops_register:
+@@ -422,10 +434,16 @@ err_linecards_event_ops_register:
  static void mlxsw_m_linecards_unregister(struct mlxsw_m *mlxsw_m)
  {
  	struct mlxsw_linecards *linecards = mlxsw_core_linecards(mlxsw_m->core);
