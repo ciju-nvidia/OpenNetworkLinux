@@ -87,6 +87,8 @@ pinctrl-intel-backport-gpio-enable.patch
 0086-i2c-mlxcpld-Fix-criteria-for-frequency-setting.patch
 0087-i2c-mlxcpld-Reduce-polling-time-for-I2C-transactions.patch
 0088-hwmon-pmbus-mp2975-Add-missed-POUT-attribute-for-pag.patch
+0099-platform-mellanox-mlxreg-io-Fix-argument-base-in-kst.patch
 0100-TMP-platform-mellanox-Extend-platform-with-bring-up-fixe.patch
 0101-TMP-net-mlxsw-Extend-mlxsw-driver-with-bring-up-fixes.patch
 0102-squash-to-TMP-net-mlxsw-Extend-mlxsw-driver-with-bring-u.patch
+0103-squash-to-TMP-platform-mellanox-Extend-platform-with-bring-up-fixe.patch
