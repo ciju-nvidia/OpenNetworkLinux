@@ -92,3 +92,5 @@ pinctrl-intel-backport-gpio-enable.patch
 0101-TMP-net-mlxsw-Extend-mlxsw-driver-with-bring-up-fixes.patch
 0102-squash-to-TMP-net-mlxsw-Extend-mlxsw-driver-with-bring-u.patch
 0103-squash-to-TMP-platform-mellanox-Extend-platform-with-bring-up-fixe.patch
+0104-TMP-platform-mellanox-TMP-bring-up-fixes-registers.patch
+0105-squash-to-TMP-net-mlxsw-Extend-mlxsw-driver-with-bring-u.patch
