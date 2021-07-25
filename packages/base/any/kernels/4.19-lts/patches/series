@@ -84,3 +84,9 @@ pinctrl-intel-backport-gpio-enable.patch
 0086-platform-mellanox-mlxreg-hotplug-Use-capability-regi.patch
 0087-platform-mellanox-mlxreg-hotplug-Extend-logic-for-ho.patch
 0088-platform-x86-mlx-platform-Configure-notifier-callbac.patch
+0089-platform-mellanox-mlxreg-io-Extend-number-of-hwmon-a.patch
+0090-platform_data-mlxreg-Add-new-field-for-secured-acces.patch
+0091-platform-mellanox-mlxreg-lc-Add-initial-support-for-.patch
+0092-platform-x86-mlx-platform-Extend-FAN-and-LED-config-.patch
+0093-platform-x86-mlx-platform-Add-new-attributes-for-Cof.patch
+0094-platform-mellanox-Add-dedicated-match-for-system-typ.patch
