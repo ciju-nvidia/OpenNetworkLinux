@@ -78,3 +78,9 @@ pinctrl-intel-backport-gpio-enable.patch
 0080-platform-x86-mlx-platform-Fix-item-counter-assignmen.patch
 0081-platform-x86-mlx-platform-Fix-item-counter-assignmen.patch
 0082-platform-x86-mlx-platform-Fix-extended-topology-conf.patch
+0083-platform-x86-mlx-platform-Extend-FAN-platform-data-d.patch
+0084-platform_data-mlxreg-Add-new-type-to-support-modular.patch
+0085-platform-x86-mlx-platform-Add-initial-support-for-ne.patch
+0086-platform-mellanox-mlxreg-hotplug-Use-capability-regi.patch
+0087-platform-mellanox-mlxreg-hotplug-Extend-logic-for-ho.patch
+0088-platform-x86-mlx-platform-Configure-notifier-callbac.patch
