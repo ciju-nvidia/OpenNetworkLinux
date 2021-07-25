@@ -105,3 +105,15 @@ pinctrl-intel-backport-gpio-enable.patch
 0107-mlxsw-core_thermal-Rename-labels-according-to-naming.patch
 0108-mlxsw-core_thermal-Split-gearbox-initialization.patch
 0109-mlxsw-core_thermal-Extend-thermal-area-with-gearbox-.patch
+0110-mlxsw-core_thermal-Remove-redundant-query-in-gearbox.patch
+0111-mlxsw-core_thermal-Add-line-card-id-prefix-to-line-c.patch
+0112-mlxsw-reg-Add-Management-DownStream-Device-Query-Reg.patch
+0113-mlxsw-reg-Add-Management-DownStream-Device-Control-R.patch
+0114-mlxsw-core_linecards-Add-line-card-objects-and-imple.patch
+0115-mlxsw-reg-Introduce-Management-Temperature-Extended-.patch
+0116-mlxsw-core-Add-APIs-for-thermal-sensor-mapping.patch
+0117-mlxsw-core_thermal-Add-interfaces-for-line-card-init.patch
+0118-mlxsw-core_hwmon-Calculate-MLXSW_HWMON_ATTR_COUNT-mo.patch
+0119-mlxsw-core_hwmon-Add-interfaces-for-line-card-initia.patch
+0120-mlxsw-reg-Add-new-field-to-Management-General-Periph.patch
+0121-mlxsw-core-Extend-bus-init-function-with-event-handl.patch
