@@ -69,10 +69,3 @@ pinctrl-intel-backport-gpio-enable.patch
 0071-leds-mlxreg-Allow-multi-instantiation-of-same-name-L.patch
 0072-hwmon-mlxreg-fan-Return-non-zero-value-when-fan-curr.patch
 0073-platform-mellanox-mlxreg-hotplug-Add-support-for-new.patch
-0074-platform_data-mlxreg-Add-presence-register-field-for.patch
-0075-platform_data-mlxreg-Extend-core-platform-structure.patch
-0076-hwmon-mlxreg-fan-Add-support-for-fan-drawers-capabil.patch
-0077-hwmon-mlxreg-fan-Extend-the-maximum-number-of-tachom.patch
-0078-platform-x86-mlx-platform-Fix-item-counter-assignmen.patch
-0079-platform-x86-mlx-platform-Fix-item-counter-assignmen.patch
-
