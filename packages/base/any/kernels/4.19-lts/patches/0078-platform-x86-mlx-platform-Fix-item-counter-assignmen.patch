@@ -1,7 +1,7 @@
-From 9b0d00b714d50580882accaf9e4c57f24b064a19 Mon Sep 17 00:00:00 2001
+From 79e46d5a71658d2b7ecd8278636ae9578121bd85 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Mon, 7 Dec 2020 19:47:44 +0200
-Subject: [PATCH backport 4.19 06/10] platform/x86: mlx-platform: Fix item
+Subject: [PATCH backport v4.19 056/104] platform/x86: mlx-platform: Fix item
  counter assignment for MSN2700, MSN24xx systems
 
 Fix array names to match assignments for data items and data items
@@ -49,5 +49,5 @@ index 218e3ae68825..f3420c577ec8 100644
  		.health = false,
  	},
 -- 
-2.11.0
+2.20.1
 

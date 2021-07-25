@@ -1,7 +1,8 @@
-From e5565dcc3fc7df1c2c3b5498ab895a3291fdfa82 Mon Sep 17 00:00:00 2001
+From dc10844f99a350ed8c64b96d0b85232bc96b6de5 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Tue, 11 May 2021 08:12:49 +0300
-Subject: [PATCH] leds: mlxreg: Provide conversion for hardware LED color code
+Date: Tue, 6 Jul 2021 18:38:29 +0000
+Subject: [PATCH backport v4.19 045/104] leds: mlxreg: Provide conversion for
+ hardware LED color code
 
 In case register is set by hardware, convert hardware color code to
 expose correct color to "sysfs".
@@ -17,7 +18,7 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  1 file changed, 22 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/leds/leds-mlxreg.c b/drivers/leds/leds-mlxreg.c
-index 53130a8..a472c16 100644
+index 781eb03459e3..52c5cc209721 100644
 --- a/drivers/leds/leds-mlxreg.c
 +++ b/drivers/leds/leds-mlxreg.c
 @@ -17,7 +17,9 @@
@@ -88,8 +89,8 @@ index 53130a8..a472c16 100644
  			led_data->base_color = MLXREG_LED_GREEN_SOLID;
 +			led_data->base_color_hw = MLXREG_LED_GREEN_SOLID_HW;
  		}
- 		if (priv->pdev->id > 0)
- 			sprintf(led_data->led_cdev_name, "%s%d:%s", "mlxreg",
+ 		sprintf(led_data->led_cdev_name, "%s:%s", "mlxreg",
+ 			data->label);
 -- 
-2.8.4
+2.20.1
 

@@ -1,8 +1,8 @@
-From 97a18fe05a59a76513ea4e11560760d0450e6f6c Mon Sep 17 00:00:00 2001
+From eef13398ea51377da47025465d6ab82c4d871683 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Sun, 10 Jan 2021 19:27:52 +0200
-Subject: [PATCH net-next 1/1] mlxsw: core: Remove critical trip point from
- thermal zones
+Date: Mon, 22 Mar 2021 14:11:18 +0200
+Subject: [PATCH backport v4.19 037/104] mlxsw: core: Remove critical trip
+ point from thermal zones
 
 Disable software thermal protection by removing critical trip points
 for the all thermal zones.
@@ -19,11 +19,11 @@ shutdown.
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
- drivers/net/ethernet/mellanox/mlxsw/core_thermal.c | 19 ++-----------------
+ .../ethernet/mellanox/mlxsw/core_thermal.c    | 19 ++-----------------
  1 file changed, 2 insertions(+), 17 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
-index 477c3ed53..9afac8a04 100644
+index 84a42b9f0fb4..7efdb116710a 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 @@ -19,11 +19,9 @@
@@ -71,7 +71,7 @@ index 477c3ed53..9afac8a04 100644
  }
  
  static int
-@@ -203,8 +192,6 @@ mlxsw_thermal_module_trips_update(struct device *dev, struct mlxsw_core *core,
+@@ -208,8 +197,6 @@ mlxsw_thermal_module_trips_update(struct device *dev, struct mlxsw_core *core,
  		tz->trips[MLXSW_THERMAL_TEMP_TRIP_NORM].temp = crit_temp;
  	tz->trips[MLXSW_THERMAL_TEMP_TRIP_HIGH].temp = crit_temp;
  	tz->trips[MLXSW_THERMAL_TEMP_TRIP_HOT].temp = emerg_temp;
@@ -80,7 +80,7 @@ index 477c3ed53..9afac8a04 100644
  
  	return 0;
  }
-@@ -376,8 +363,7 @@ static int mlxsw_thermal_set_trip_temp(struct thermal_zone_device *tzdev,
+@@ -381,8 +368,7 @@ static int mlxsw_thermal_set_trip_temp(struct thermal_zone_device *tzdev,
  {
  	struct mlxsw_thermal *thermal = tzdev->devdata;
  
@@ -90,7 +90,7 @@ index 477c3ed53..9afac8a04 100644
  		return -EINVAL;
  
  	thermal->trips[trip].temp = temp;
-@@ -588,8 +574,7 @@ mlxsw_thermal_module_trip_temp_set(struct thermal_zone_device *tzdev,
+@@ -614,8 +600,7 @@ mlxsw_thermal_module_trip_temp_set(struct thermal_zone_device *tzdev,
  {
  	struct mlxsw_thermal_module *tz = tzdev->devdata;
  
@@ -101,5 +101,5 @@ index 477c3ed53..9afac8a04 100644
  
  	tz->trips[trip].temp = temp;
 -- 
-2.11.0
+2.20.1
 
