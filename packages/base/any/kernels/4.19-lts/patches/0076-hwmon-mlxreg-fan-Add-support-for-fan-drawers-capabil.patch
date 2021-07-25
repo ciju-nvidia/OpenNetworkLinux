@@ -1,8 +1,8 @@
-From 13edaa0ca05ffe4396a0710bfc170c28011cedde Mon Sep 17 00:00:00 2001
+From 1114d49cc0bd2357a331a7034d2dffe0b07c8a87 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Mon, 22 Mar 2021 19:22:37 +0200
-Subject: [PATCH backport v4.19 052/104] hwmon: (mlxreg-fan) Add support for
- fan drawers capability and present registers
+Subject: [PATCH backport v4.19 3/9] hwmon: (mlxreg-fan) Add support for fan
+ drawers capability and present registers
 
 Add support for fan drawer's capability and present registers in order
 to set mapping between the fan drawers and tachometers. Some systems
@@ -20,7 +20,7 @@ Signed-off-by: Guenter Roeck <linux@roeck-us.net>
  1 file changed, 50 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/hwmon/mlxreg-fan.c b/drivers/hwmon/mlxreg-fan.c
-index dba544e76fa5..e3db83f6374a 100644
+index dba544e76..e3db83f63 100644
 --- a/drivers/hwmon/mlxreg-fan.c
 +++ b/drivers/hwmon/mlxreg-fan.c
 @@ -67,11 +67,13 @@

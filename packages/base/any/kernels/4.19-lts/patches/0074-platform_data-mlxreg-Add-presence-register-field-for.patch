@@ -1,7 +1,7 @@
-From ee92270690e5d7cd95963021b158fe365d6e697e Mon Sep 17 00:00:00 2001
+From b73141801717a3fd4b5b7f76e41aceb5548df628 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@mellanox.com>
 Date: Tue, 14 Jul 2020 15:02:02 +0300
-Subject: [PATCH backport v4.19 050/104] platform_data/mlxreg: Add presence
+Subject: [PATCH backport v4.19 1/9] platform_data/mlxreg: Add presence
  register field for FAN devices
 
 Add new field 'reg_prsnt' to the structure 'mlxreg_core_data' to
@@ -16,7 +16,7 @@ Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/include/linux/platform_data/mlxreg.h b/include/linux/platform_data/mlxreg.h
-index 03d768d73a5f..1af9c01563f9 100644
+index 03d768d73..1af9c0156 100644
 --- a/include/linux/platform_data/mlxreg.h
 +++ b/include/linux/platform_data/mlxreg.h
 @@ -78,6 +78,7 @@ struct mlxreg_hotplug_device {
