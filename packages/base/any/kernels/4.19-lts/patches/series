@@ -117,3 +117,11 @@ pinctrl-intel-backport-gpio-enable.patch
 0119-mlxsw-core_hwmon-Add-interfaces-for-line-card-initia.patch
 0120-mlxsw-reg-Add-new-field-to-Management-General-Periph.patch
 0121-mlxsw-core-Extend-bus-init-function-with-event-handl.patch
+0122-mlxsw-i2c-Add-support-for-system-event-handling.patch
+0123-mlxsw-minimal-Extend-internal-structures-to-support-.patch
+0124-mlxsw-minimal-Extend-port-creation-APIs-with-slot-in.patch
+0125-mlxsw-minimal-Add-indexation-for-modules-on-for-line.patch
+0126-mlxsw-minimal-Obtain-maximum-number-of-slots-support.patch
+0127-mlxsw-minimal-Add-system-event-handler.patch
+0128-mlxsw-minimal-Add-interfaces-for-line-card-initializ.patch
+
