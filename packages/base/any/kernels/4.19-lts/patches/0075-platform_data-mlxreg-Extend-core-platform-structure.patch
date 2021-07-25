@@ -1,8 +1,8 @@
-From 233776b45f29ad352ba16d401717d5d47d4ccecf Mon Sep 17 00:00:00 2001
+From 59069b04d3acf580cecc6f3e879ec1491abddae9 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Wed, 23 Sep 2020 20:20:52 +0300
-Subject: [PATCH backport v4.19 051/104] platform_data/mlxreg: Extend core
- platform structure
+Subject: [PATCH backport v4.19 2/9] platform_data/mlxreg: Extend core platform
+ structure
 
 Add 'capability' field to structure 'mlxreg_core_platform_data'.
 The purpose of this filed to indicate  the actual number of the
@@ -20,7 +20,7 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  1 file changed, 2 insertions(+)
 
 diff --git a/include/linux/platform_data/mlxreg.h b/include/linux/platform_data/mlxreg.h
-index 1af9c01563f9..0efc6759d94d 100644
+index 1af9c0156..0efc6759d 100644
 --- a/include/linux/platform_data/mlxreg.h
 +++ b/include/linux/platform_data/mlxreg.h
 @@ -137,6 +137,7 @@ struct mlxreg_core_item {
