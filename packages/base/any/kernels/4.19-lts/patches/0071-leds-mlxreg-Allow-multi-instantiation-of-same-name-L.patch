@@ -1,8 +1,8 @@
-From 6c77378564fe382d6837552fc2020e11584eb3f1 Mon Sep 17 00:00:00 2001
+From a5c3eeab89f0b19f800025b96428b6060dd7c58b Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Tue, 23 Feb 2021 22:05:06 +0200
-Subject: [PATCH led backport 4.19 1/1] leds: mlxreg: Allow multi-instantiation
- of same name LED for modular systems
+Date: Wed, 7 Jul 2021 10:29:27 +0000
+Subject: [PATCH backport v4.19 047/104] leds: mlxreg: Allow
+ multi-instantiation of same name LED for modular systems
 
 It could be more than one instance of LED with the same name in the
 modular systems. For example, "status" or "uid" LED can be located
@@ -49,10 +49,10 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  1 file changed, 14 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/leds/leds-mlxreg.c b/drivers/leds/leds-mlxreg.c
-index 781eb0345..afc907048 100644
+index 40c6fd96a8d0..099ff4be291d 100644
 --- a/drivers/leds/leds-mlxreg.c
 +++ b/drivers/leds/leds-mlxreg.c
-@@ -187,7 +187,7 @@ static int mlxreg_led_config(struct mlxreg_led_priv_data *priv)
+@@ -200,7 +200,7 @@ static int mlxreg_led_config(struct mlxreg_led_priv_data *priv)
  	struct mlxreg_core_data *data = led_pdata->data;
  	struct mlxreg_led_data *led_data;
  	struct led_classdev *led_cdev;
@@ -61,9 +61,9 @@ index 781eb0345..afc907048 100644
  	u32 regval;
  	int i;
  	int err;
-@@ -228,8 +228,19 @@ static int mlxreg_led_config(struct mlxreg_led_priv_data *priv)
- 			brightness = LED_OFF;
+@@ -245,8 +245,19 @@ static int mlxreg_led_config(struct mlxreg_led_priv_data *priv)
  			led_data->base_color = MLXREG_LED_GREEN_SOLID;
+ 			led_data->base_color_hw = MLXREG_LED_GREEN_SOLID_HW;
  		}
 -		sprintf(led_data->led_cdev_name, "%s:%s", "mlxreg",
 -			data->label);

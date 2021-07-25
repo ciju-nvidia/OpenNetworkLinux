@@ -1,8 +1,8 @@
-From dce3743d854355fbc0aea3180ba40c937d21d499 Mon Sep 17 00:00:00 2001
+From 2db695f321071de4bfc10ca1589f4db9aa26160f Mon Sep 17 00:00:00 2001
 From: Mykola Kostenok <c_mykolak@nvidia.com>
 Date: Thu, 3 Jun 2021 18:18:05 +0300
-Subject: [PATCH 4/6] mlxsw: thermal: Add function for reading module
- temperature and thresholds
+Subject: [PATCH backport v4.19 035/104] mlxsw: thermal: Add function for
+ reading module temperature and thresholds
 
 Provide new function mlxsw_thermal_module_temp_and_thresholds_get() for
 reading temperature and temperature thresholds by a single operation.
@@ -17,28 +17,28 @@ Signed-off-by: Mykola Kostenok <c_mykolak@nvidia.com>
 Acked-by: Vadim Pasternak <vadimp@nvidia.com>
 Signed-off-by: Ido Schimmel <idosch@nvidia.com>
 ---
- .../ethernet/mellanox/mlxsw/core_thermal.c    | 52 +++++++++++++------
- 1 file changed, 36 insertions(+), 16 deletions(-)
+ .../ethernet/mellanox/mlxsw/core_thermal.c    | 50 +++++++++++++------
+ 1 file changed, 35 insertions(+), 15 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
-index 08eef0a39e39..f46b5e700bb3 100644
+index 8e3566828a10..2245fc42e46d 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core_thermal.c
-@@ -512,13 +512,39 @@ static int mlxsw_thermal_module_mode_set(struct thermal_zone_device *tzdev,
+@@ -514,13 +514,39 @@ static int mlxsw_thermal_module_mode_set(struct thermal_zone_device *tzdev,
  	return 0;
  }
  
 +static void
 +mlxsw_thermal_module_temp_and_thresholds_get(struct mlxsw_core *core,
-+					     u16 slot_index, u16 sensor_index,
-+					     int *p_temp, int *p_crit_temp,
++					     u16 sensor_index, int *p_temp,
++					     int *p_crit_temp,
 +					     int *p_emerg_temp)
 +{
 +	char mtmp_pl[MLXSW_REG_MTMP_LEN];
 +	int err;
 +
 +	/* Read module temperature and thresholds. */
-+	mlxsw_reg_mtmp_pack(mtmp_pl, slot_index, sensor_index, false, false);
++	mlxsw_reg_mtmp_pack(mtmp_pl, sensor_index, false, false);
 +	err = mlxsw_reg_query(core, MLXSW_REG(mtmp), mtmp_pl);
 +	if (err) {
 +		/* Set temperature and thresholds to zero to avoid passing
@@ -66,14 +66,13 @@ index 08eef0a39e39..f46b5e700bb3 100644
  	int temp;
  	int err;
  
-@@ -528,20 +554,14 @@ static int mlxsw_thermal_module_temp_get(struct thermal_zone_device *tzdev,
+@@ -530,19 +556,13 @@ static int mlxsw_thermal_module_temp_get(struct thermal_zone_device *tzdev,
  		return 0;
  	}
  
 -	/* Read module temperature. */
--	mlxsw_reg_mtmp_pack(mtmp_pl, tz->slot_index,
--			    MLXSW_REG_MTMP_MODULE_INDEX_MIN + tz->module,
--			    false, false);
+-	mlxsw_reg_mtmp_pack(mtmp_pl, MLXSW_REG_MTMP_MODULE_INDEX_MIN +
+-			    tz->module, false, false);
 -	err = mlxsw_reg_query(thermal->core, MLXSW_REG(mtmp), mtmp_pl);
 -	if (err) {
 -		/* Do not return error - in case of broken module's sensor
@@ -89,7 +88,6 @@ index 08eef0a39e39..f46b5e700bb3 100644
 +
 +	/* Read module temperature and thresholds. */
 +	mlxsw_thermal_module_temp_and_thresholds_get(thermal->core,
-+						     tz->slot_index,
 +						     sensor_index, &temp,
 +						     NULL,  NULL);
  	*p_temp = temp;
