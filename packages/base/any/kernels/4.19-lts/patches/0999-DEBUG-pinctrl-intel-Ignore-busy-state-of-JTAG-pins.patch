@@ -1,0 +1,48 @@
+From fd070f3af5ba2d2ca737e4492b60c788f8bf9bc7 Mon Sep 17 00:00:00 2001
+From: Vadim Pasternak <vadimp@nvidia.com>
+Date: Wed, 28 Jul 2021 19:36:51 +0000
+Subject: [PATCH DEBUG v4.19 1/1] DEBUG: pinctrl: intel: Ignore busy state of
+ JTAG pins
+
+Signed-of-by: Vadim Pasternak <vadimp@nvidia.com>
+---
+ drivers/pinctrl/intel/pinctrl-intel.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/pinctrl/intel/pinctrl-intel.c b/drivers/pinctrl/intel/pinctrl-intel.c
+index 89ff2795a8b5..fbed1408c1bf 100644
+--- a/drivers/pinctrl/intel/pinctrl-intel.c
++++ b/drivers/pinctrl/intel/pinctrl-intel.c
+@@ -243,13 +243,15 @@ static bool intel_pad_locked(struct intel_pinctrl *pctrl, unsigned pin)
+ 	 */
+ 	offset = community->padcfglock_offset + padgrp->reg_num * 8;
+ 	value = readl(community->regs + offset);
+-	if (value & BIT(gpp_offset))
+-		return true;
++	printk("%s(%d) pin %d value 0x%08x padcfglock_offset 0x%08x reg_num 0x%08x offset 0x%08x gpp_offset 0x%08x 0x%08lx is_true %ld\n", __func__, __LINE__, pin, value, community->padcfglock_offset, padgrp->reg_num, offset, gpp_offset, BIT(gpp_offset), value & BIT(gpp_offset));
++	//if (value & BIT(gpp_offset))
++	//	return true;
+ 
+ 	offset = community->padcfglock_offset + 4 + padgrp->reg_num * 8;
+ 	value = readl(community->regs + offset);
+-	if (value & BIT(gpp_offset))
+-		return true;
++	printk("%s(%d) pin %d value 0x%08x padcfglock_offset 0x%08x reg_num 0x%08x offset 0x%08x gpp_offset 0x%08x 0x%08lx is_true %ld\n", __func__, __LINE__, pin, value, community->padcfglock_offset, padgrp->reg_num, offset, gpp_offset, BIT(gpp_offset), value & BIT(gpp_offset));
++	//if (value & BIT(gpp_offset))
++	//	return true;
+ 
+ 	return false;
+ }
+@@ -1377,6 +1379,9 @@ int intel_pinctrl_probe(struct platform_device *pdev,
+ 		community->regs = regs;
+ 		community->pad_regs = regs + padbar;
+ 
++		printk("%s(%d) community %d readl(community->regs + 0x90) 0x%08x\n", __func__, __LINE__, i, readl(community->regs + 0x90));
++		printk("%s(%d) community %d readl(community->regs + 0x94) 0x%08x\n", __func__, __LINE__, i, readl(community->regs + 0x94));
++
+ 		if (!community->is_offset)
+ 			community->is_offset = GPI_IS;
+ 
+-- 
+2.20.1
+
