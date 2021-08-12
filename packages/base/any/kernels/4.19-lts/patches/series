@@ -125,4 +125,5 @@ driver-hwmon-max6620.patch
 0128-mlxsw-minimal-Add-interfaces-for-line-card-initializ.patch
 0129-pinctrl-intel-Allow-to-request-locked-pads.patch
 0130-pinctrl-intel-Actually-disable-Tx-and-Rx-buffers-on-.patch
+0131-i2c-mlxcpld-check-correct-size-of-maximum-RECV_LEN-p.patch
 
