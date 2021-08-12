@@ -1,8 +1,8 @@
-From 3e2c0a14b01a16e12dc4f818307b63c98057f4be Mon Sep 17 00:00:00 2001
+From 04ed3ef72b173d713a06631daba2f9c768f03e58 Mon Sep 17 00:00:00 2001
 From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 Date: Tue, 8 Dec 2020 20:24:03 +0200
-Subject: [PATCH v4.19 backport 107/108] pinctrl: intel: Actually disable Tx
- and Rx buffers on GPIO request
+Subject: [PATCH backport v.4.19 57/58] pinctrl: intel: Actually disable Tx and
+ Rx buffers on GPIO request
 
 Mistakenly the buffers (input and output) become enabled together for a short
 period of time during GPIO request. This is problematic, because instead of
@@ -26,7 +26,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  1 file changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/pinctrl/intel/pinctrl-intel.c b/drivers/pinctrl/intel/pinctrl-intel.c
-index b2b088261..0230b239b 100644
+index b2b088261de4..0230b239bd32 100644
 --- a/drivers/pinctrl/intel/pinctrl-intel.c
 +++ b/drivers/pinctrl/intel/pinctrl-intel.c
 @@ -462,11 +462,20 @@ static void intel_gpio_set_gpio_mode(void __iomem *padcfg0)
