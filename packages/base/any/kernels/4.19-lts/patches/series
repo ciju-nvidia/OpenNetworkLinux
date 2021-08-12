@@ -37,7 +37,6 @@ driver-hwmon-max6620.patch
 0036-mlxsw-core-Increase-critical-threshold-for-ASIC-ther.patch
 0037-hwmon-pmbus-Add-support-for-MPS-Multi-phase-mp2888-c.patch
 0038-mlxsw-core-Add-validation-of-transceiver-temperature.patch
-pinctrl-intel-backport-gpio-enable.patch
 0041-mlxsw-core-Align-thermal-and-hwmon-modules-with-upst.patch
 0044-platform-mellanox-mlxreg-hotplug-Use-capability-regi.patch
 0045-i2c-mlxcpld-Update-module-license.patch
@@ -124,4 +123,6 @@ pinctrl-intel-backport-gpio-enable.patch
 0126-mlxsw-minimal-Obtain-maximum-number-of-slots-support.patch
 0127-mlxsw-minimal-Add-system-event-handler.patch
 0128-mlxsw-minimal-Add-interfaces-for-line-card-initializ.patch
+0129-pinctrl-intel-Allow-to-request-locked-pads.patch
+0130-pinctrl-intel-Actually-disable-Tx-and-Rx-buffers-on-.patch
 
