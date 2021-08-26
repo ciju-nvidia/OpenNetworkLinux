@@ -510,7 +510,7 @@ menuentry %(boot_menu_entry)s {
   echo 'Loading %(boot_loading_name)s ...'
   insmod gzio
   insmod part_msdos
-  linux /%(kernel)s %(args)s onl_platform=%(platform)s
+  linux /kernel-4.19-lts-x86_64-all iomem=relaxed %(args)s onl_platform=%(platform)s
   initrd /%(platform)s.cpio.gz
 }
 
