@@ -1,7 +1,7 @@
-From 83a5c9b220e0a1d2bb75628191e513a92aab8623 Mon Sep 17 00:00:00 2001
+From 271ec2587c5c596400bb1b1062f2ea786bb0c6f5 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Mon, 12 Jul 2021 22:20:35 +0000
-Subject: [PATCH backport v4.19 19/21] platform/x86: mlx-platform: Extend FAN
+Subject: [PATCH backport v4.19 067/104] platform/x86: mlx-platform: Extend FAN
  and LED config to support new MQM97xx systems
 
 Add support for new system types "MQM97xx", which is based on Mellanox
@@ -30,7 +30,7 @@ Reviewed-by: Oleksandr Shamray <oleksandrs@nvidia.com>
  1 file changed, 43 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/platform/x86/mlx-platform.c b/drivers/platform/x86/mlx-platform.c
-index f655b6a0bda7..70c7ff3e06d9 100644
+index c7a04dcbe86c..c215f4f403bd 100644
 --- a/drivers/platform/x86/mlx-platform.c
 +++ b/drivers/platform/x86/mlx-platform.c
 @@ -126,6 +126,8 @@
@@ -73,23 +73,23 @@ index f655b6a0bda7..70c7ff3e06d9 100644
 +	{
 +		.label = "fan7:green",
 +		.reg = MLXPLAT_CPLD_LPC_REG_LED6_OFFSET,
-+		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++		.mask = MLXPLAT_CPLD_LED_HI_NIBBLE_MASK,
 +		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
 +		.bit = BIT(6),
 +	},
 +	{
 +		.label = "fan7:orange",
 +		.reg = MLXPLAT_CPLD_LPC_REG_LED6_OFFSET,
-+		.mask = MLXPLAT_CPLD_LED_LO_NIBBLE_MASK,
++		.mask = MLXPLAT_CPLD_LED_HI_NIBBLE_MASK,
 +		.capability = MLXPLAT_CPLD_LPC_REG_FAN_DRW_CAP_OFFSET,
 +		.bit = BIT(6),
 +	},
  	{
  		.label = "uid:blue",
  		.reg = MLXPLAT_CPLD_LPC_REG_LED5_OFFSET,
-@@ -3517,6 +3541,20 @@ static struct mlxreg_core_data mlxplat_mlxcpld_default_fan_data[] = {
+@@ -3528,6 +3552,20 @@ static struct mlxreg_core_data mlxplat_mlxcpld_default_fan_data[] = {
+ 		.capability = MLXPLAT_CPLD_LPC_REG_FAN_CAP2_OFFSET,
  		.bit = BIT(3),
- 		.reg_prsnt = MLXPLAT_CPLD_LPC_REG_FAN_OFFSET,
  	},
 +	{
 +		.label = "tacho13",
@@ -108,7 +108,7 @@ index f655b6a0bda7..70c7ff3e06d9 100644
  	{
  		.label = "conf",
  		.capability = MLXPLAT_CPLD_LPC_REG_TACHO_SPEED_OFFSET,
-@@ -3919,6 +3957,8 @@ static bool mlxplat_mlxcpld_readable_reg(struct device *dev, unsigned int reg)
+@@ -3930,6 +3968,8 @@ static bool mlxplat_mlxcpld_readable_reg(struct device *dev, unsigned int reg)
  	case MLXPLAT_CPLD_LPC_REG_TACHO10_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_TACHO11_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_TACHO12_OFFSET:
@@ -117,7 +117,7 @@ index f655b6a0bda7..70c7ff3e06d9 100644
  	case MLXPLAT_CPLD_LPC_REG_PWM_CONTROL_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_FAN_CAP1_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_FAN_CAP2_OFFSET:
-@@ -4031,6 +4071,8 @@ static bool mlxplat_mlxcpld_volatile_reg(struct device *dev, unsigned int reg)
+@@ -4042,6 +4082,8 @@ static bool mlxplat_mlxcpld_volatile_reg(struct device *dev, unsigned int reg)
  	case MLXPLAT_CPLD_LPC_REG_TACHO10_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_TACHO11_OFFSET:
  	case MLXPLAT_CPLD_LPC_REG_TACHO12_OFFSET:
