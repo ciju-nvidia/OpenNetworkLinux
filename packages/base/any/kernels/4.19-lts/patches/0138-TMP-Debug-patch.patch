@@ -1,0 +1,25 @@
+From 1b208c6ba516c5577b18e372eb4f28ae96c28b28 Mon Sep 17 00:00:00 2001
+From: Vadim Pasternak <vadimp@nvidia.com>
+Date: Thu, 23 Sep 2021 08:30:29 +0000
+Subject: [PATCH backport v.4.19 1/1] TMP: Debug patch
+
+---
+ drivers/net/ethernet/mellanox/mlxsw/core_linecards.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c b/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
+index 48d17b183fb7..cd14260fcddd 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
++++ b/drivers/net/ethernet/mellanox/mlxsw/core_linecards.c
+@@ -160,6 +160,8 @@ static int __mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
+ 					&sr_valid, &ready, &active,
+ 					&hw_revision, &ini_version,
+ 					&card_type);
++	printk("%s delayed: %s, lc%u, prov %d, sr_valid %d, ready %d, active %d, hw_revision %u, ini_version %u provision_only %d\n",
++	       __func__, tmp_delayed ? "yes": "no", slot_index, provisioned, sr_valid, ready, active, hw_revision, ini_version, process_provision_only);
+ 
+ 	if (linecard) {
+ 		if (slot_index != linecard->slot_index)
+-- 
+2.20.1
+
