@@ -132,4 +132,5 @@ driver-hwmon-max6620.patch
 0135-hwmon-mlxreg-fan-Extend-driver-to-support-multiply-c.patch
 0136-hwmon-mlxreg-fan-Fix-out-of-bounds-read-on-array-fan.patch
 0137-platform-x86-mlx-platform-Add-support-for-multiply-c.patch
+0138-hwmon-mlxreg-fan-Modify-PWM-connectivity-validation.patch
 
