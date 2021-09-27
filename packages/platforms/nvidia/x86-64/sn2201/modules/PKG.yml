@@ -1,0 +1,1 @@
+!include $ONL_TEMPLATES/platform-modules.yml ARCH=amd64 VENDOR=nvidia BASENAME=x86-64-nvidia-sn2201 KERNELS="onl-kernel-4.19-lts-x86-64-all:amd64"
