@@ -139,4 +139,7 @@ driver-hwmon-max6620.patch
 0142-dt-bindings-Add-description-for-EMC2305-for-RPM-base.patch
 0143-hwmon-powr1220-Upgrade-driver-to-support-hwmon-info-.patch
 0144-hwmon-powr1220-Add-support-for-Lattice-s-POWR1014-po.patch
-0145-platform-mellanox-Add-support-for-new-SN2201-system.patch
+0145-platform_data-mlxreg-Add-field-for-notification-call.patch
+0146-i2c-mlxcpld-Add-callback-to-notify-probing-completio.patch
+0147-platform-mellanox-Add-support-for-new-SN2201-system.patch
+0148-mlxsw-core-Extend-external-cooling-device-whitelist-.patch
