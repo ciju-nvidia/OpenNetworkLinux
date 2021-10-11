@@ -134,5 +134,7 @@ driver-hwmon-max6620.patch
 0137-platform-x86-mlx-platform-Add-support-for-multiply-c.patch
 0138-hwmon-mlxreg-fan-Modify-PWM-connectivity-validation.patch
 0139--mlxreg-fan-Rename-cooling-devices.patch
-0140-mlxsw-core_thermal-Rename-cooling-devices.patch
-
+0140-hwmon-mlxreg-fan-Rename-cooling-devices.patch
+0141-mlxsw-core_thermal-Rename-cooling-devices.patch
+0142-platform-x86-mlx-platform-Add-support-for-systems-eq.patch
+0143-platform-x86-mlx-platform-Add-support-for-new-system.patch
