@@ -138,3 +138,5 @@ driver-hwmon-max6620.patch
 0141-mlxsw-core_thermal-Rename-cooling-devices.patch
 0142-platform-x86-mlx-platform-Add-support-for-systems-eq.patch
 0143-platform-x86-mlx-platform-Add-support-for-new-system.patch
+0144-platform-x86-mlx-platform-Fix-cpld-_pn-register-seco.patch
+
