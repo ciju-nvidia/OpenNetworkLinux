@@ -11,3 +11,12 @@
 0011-i2c-mux-mlxcpld-Add-callback-to-notify-mux-creation-.patch
 0012-hwmon-mlxreg-fan-Add-support-for-fan-drawers-capabil.patch
 0013-hwmon-pmbus-shrink-code-and-remove-pmbus_do_remove.patch
+0014-mlxsw-core-Extend-external-cooling-device-whitelist-.patch
+0015-platform_data-mlxreg-Add-field-for-notification-call.patch
+0016-i2c-mlxcpld-Add-callback-to-notify-probing-completio.patch
+0017-hwmon-powr1220-Upgrade-driver-to-support-hwmon-info-.patch
+0018-hwmon-powr1220-Add-support-for-Lattice-s-POWR1014-po.patch
+0019-hwmon-Add-support-for-EMC2305-RPM-based-PWM-Fan-Spee.patch
+0020-dt-bindings-Add-description-for-EMC2305-for-RPM-base.patch
+0021-platform-mellanox-Add-support-for-new-SN2201-system.patch
+0022-Documentation-ABI-Add-new-attributes-for-mlxreg-io-s.patch
