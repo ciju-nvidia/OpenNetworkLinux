@@ -88,3 +88,4 @@
 0088-dt-bindings-Add-description-for-EMC2305-for-RPM-base.patch
 0089-platform-mellanox-Add-support-for-new-SN2201-system.patch
 0090-Documentation-ABI-Add-new-attributes-for-mlxreg-io-s.patch
+0091-mlxsw-Use-weak-reverse-dependencies-for-firmware-fla.patch
