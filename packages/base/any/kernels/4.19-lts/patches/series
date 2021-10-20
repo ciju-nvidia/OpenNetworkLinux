@@ -135,4 +135,5 @@ driver-hwmon-max6620.patch
 0138-hwmon-mlxreg-fan-Modify-PWM-connectivity-validation.patch
 0139--mlxreg-fan-Rename-cooling-devices.patch
 0140-mlxsw-core_thermal-Rename-cooling-devices.patch
+0141-mlxsw-Use-weak-reverse-dependencies-for-firmware-fla.patch
 
