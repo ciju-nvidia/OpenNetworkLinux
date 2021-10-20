@@ -1,7 +1,7 @@
 From 554a0c0cdffa85b631f6a1858497d5094b5710ee Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Mon, 22 Mar 2021 19:22:37 +0200
-Subject: [PATCH v5.10.43 backport 12/13] hwmon: (mlxreg-fan) Add support for
+Subject: [PATCH backport v5.10.43 12/67] hwmon: (mlxreg-fan) Add support for
  fan drawers capability and present registers
 
 Add support for fan drawer's capability and present registers in order

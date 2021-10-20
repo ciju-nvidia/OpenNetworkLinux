@@ -1,7 +1,7 @@
 From ab92866c859a6844e9f708d45ac6e04b3131a645 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Mon, 8 Feb 2021 22:16:05 +0200
-Subject: [PATCH v5.10.43 backport 10/13] i2c: mux: mlxcpld: Extend supported
+Subject: [PATCH backport v5.10.43 10/67] i2c: mux: mlxcpld: Extend supported
  mux number
 
 Allow to extend mux number supported by driver.

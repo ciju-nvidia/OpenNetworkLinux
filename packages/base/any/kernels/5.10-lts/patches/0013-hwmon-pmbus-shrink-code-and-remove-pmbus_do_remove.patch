@@ -1,7 +1,7 @@
 From a3b467566b25f6c559c635b52e9f7a6146b11f11 Mon Sep 17 00:00:00 2001
 From: Bartosz Golaszewski <bgolaszewski@baylibre.com>
 Date: Mon, 26 Oct 2020 11:53:52 +0100
-Subject: [PATCH v5.10.43 backport 13/13] hwmon: (pmbus) shrink code and remove
+Subject: [PATCH backport v5.10.43 13/67] hwmon: (pmbus) shrink code and remove
  pmbus_do_remove()
 
 The only action currently performed in pmbus_do_remove() is removing the

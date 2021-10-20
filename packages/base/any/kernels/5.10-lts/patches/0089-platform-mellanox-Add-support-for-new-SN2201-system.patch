@@ -54,10 +54,10 @@ diff --git a/drivers/platform/mellanox/Makefile b/drivers/platform/mellanox/Make
 index e47b6b064..6af37ee88 100644
 --- a/drivers/platform/mellanox/Makefile
 +++ b/drivers/platform/mellanox/Makefile
-@@ -7,3 +7,4 @@ 
- obj-$(CONFIG_MLXBF_TMFIFO)	+= mlxbf-tmfifo.o
- obj-$(CONFIG_MLXREG_HOTPLUG)	+= mlxreg-hotplug.o
+@@ -8,3 +8,4 @@
+ obj-$(CONFIG_MLXREG_HOTPLUG)   += mlxreg-hotplug.o
  obj-$(CONFIG_MLXREG_IO) += mlxreg-io.o
+ obj-$(CONFIG_MLXREG_LC) += mlxreg-lc.o
 +obj-$(CONFIG_NVSW_SN2201) += nvsw-sn2201.o
 diff --git a/drivers/platform/mellanox/nvsw-sn2201.c b/drivers/platform/mellanox/nvsw-sn2201.c
 new file mode 100644
