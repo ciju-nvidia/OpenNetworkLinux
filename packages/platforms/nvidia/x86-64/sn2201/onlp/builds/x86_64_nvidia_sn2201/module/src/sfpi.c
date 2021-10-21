@@ -198,7 +198,7 @@ onlp_sfpi_eeprom_read(int port, uint8_t data[256])
     int rv = ONLP_STATUS_OK;
     int idx = 0;
     char mlx_cmd[PATH_MAX] = {0};
-    char eeprom_dev_name[PATH_MAX] = {0};
+    char eeprom_dev_name[(PATH_MAX/2)] = {0};
     char eeprom_dev_path[PATH_MAX] = {0};
     char eeprom_data[PATH_MAX] = {0};
     plat_info_t *plat_info = &gPlat_info[gPlat_id];
