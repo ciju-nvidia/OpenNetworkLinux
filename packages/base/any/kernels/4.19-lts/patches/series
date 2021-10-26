@@ -147,3 +147,4 @@ driver-hwmon-max6620.patch
 0150-platform-mellanox-Add-support-for-new-SN2201-system.patch
 0151-mlxsw-core-Extend-external-cooling-device-whitelist-.patch
 0152-Documentation-ABI-Add-new-attributes-for-mlxreg-io-s.patch
+0154-platform-x86-mlx-platform-Add-support-for-new-system.patch
