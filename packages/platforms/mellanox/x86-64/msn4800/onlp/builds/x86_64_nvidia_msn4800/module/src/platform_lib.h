@@ -25,7 +25,7 @@
 #ifndef __PLATFORM_LIB_H__
 #define __PLATFORM_LIB_H__
 
-#include "x86_64_mlnx_msn4800_log.h"
+#include "x86_64_nvidia_msn4800_log.h"
 
 #define CHASSIS_PSU_COUNT           4
 #define CPLD_COUNT                  3

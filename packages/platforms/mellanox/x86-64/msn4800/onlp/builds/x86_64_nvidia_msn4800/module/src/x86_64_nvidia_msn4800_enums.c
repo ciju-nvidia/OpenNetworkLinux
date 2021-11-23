@@ -3,7 +3,7 @@
  *
  *
  *****************************************************************************/
-#include <x86_64_mlnx_msn4800/x86_64_mlnx_msn4800_config.h>
+#include <x86_64_nvidia_msn4800/x86_64_nvidia_msn4800_config.h>
 
 /* <--auto.start.enum(ALL).source> */
 /* <auto.end.enum(ALL).source> */

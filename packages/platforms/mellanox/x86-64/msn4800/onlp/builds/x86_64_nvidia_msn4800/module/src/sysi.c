@@ -34,10 +34,10 @@
 #include <onlp/platformi/thermali.h>
 #include "platform_lib.h"
 #include <mlnx_common/mlnx_common.h>
-#include "x86_64_mlnx_msn4800_int.h"
-#include "x86_64_mlnx_msn4800_log.h"
+#include "x86_64_nvidia_msn4800_int.h"
+#include "x86_64_nvidia_msn4800_log.h"
 
-#define ONL_PLATFORM_NAME  "x86-64-mlnx-msn4800-r0"
+#define ONL_PLATFORM_NAME  "x86-64-nvidia-msn4800-r0"
 
 int mc_get_platform_info(mlnx_platform_info_t* mlnx_platform)
 {
