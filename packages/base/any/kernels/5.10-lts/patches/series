@@ -149,4 +149,10 @@
 0149-mlxsw-core-Add-interfaces-for-line-card-initializati.patch
 0150-mlxsw-core_thermal-Add-interfaces-for-line-card-init.patch
 0151-mlxsw-core_hwmon-Add-interfaces-for-line-card-initia.patch
+0152-mlxsw-minimal-Prepare-driver-for-modular-system-supp.patch
+0153-mlxsw-core-Extend-bus-init-function-with-event-handl.patch
+0154-mlxsw-i2c-Add-support-for-system-events-handling.patch
+0155-mlxsw-core-Export-line-card-API.patch
+0156-mlxsw-minimal-Add-system-event-handler.patch
+0157-mlxsw-minimal-Add-interfaces-for-line-card-initializ.patch
 
