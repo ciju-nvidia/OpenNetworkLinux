@@ -1,0 +1,177 @@
+From 41bcb15bcf5e75cc8fb1bfaaca237bb63936ecf4 Mon Sep 17 00:00:00 2001
+From: Vadim Pasternak <vadimp@nvidia.com>
+Date: Sun, 2 Jan 2022 16:06:30 +0000
+Subject: [PATCH backport for v5.10 1/1] TMP: Debug1
+
+---
+ drivers/net/ethernet/mellanox/mlxsw/core.c    | 28 ++++++++++++++++---
+ drivers/net/ethernet/mellanox/mlxsw/core.h    |  3 +-
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c |  2 +-
+ .../net/ethernet/mellanox/mlxsw/spectrum.c    |  2 +-
+ .../net/ethernet/mellanox/mlxsw/switchib.c    |  2 +-
+ .../net/ethernet/mellanox/mlxsw/switchx2.c    |  2 +-
+ include/net/devlink.h                         |  2 ++
+ 7 files changed, 32 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/core.c b/drivers/net/ethernet/mellanox/mlxsw/core.c
+index 40aa31b4b189..f6dd7ca5a327 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/core.c
++++ b/drivers/net/ethernet/mellanox/mlxsw/core.c
+@@ -48,6 +48,7 @@ struct mlxsw_core_port {
+ 	struct devlink_port devlink_port;
+ 	void *port_driver_priv;
+ 	u8 local_port;
++	struct mlxsw_linecard *linecard;
+ };
+ 
+ void *mlxsw_core_port_driver_priv(struct mlxsw_core_port *mlxsw_core_port)
+@@ -2843,7 +2844,7 @@ EXPORT_SYMBOL(mlxsw_core_res_get);
+ 
+ static int __mlxsw_core_port_init(struct mlxsw_core *mlxsw_core, u8 local_port,
+ 				  enum devlink_port_flavour flavour,
+-				  u32 port_number, bool split,
++				  u8 slot_index, u32 port_number, bool split,
+ 				  u32 split_port_subnumber,
+ 				  bool splittable, u32 lanes,
+ 				  const unsigned char *switch_id,
+@@ -2866,6 +2867,15 @@ static int __mlxsw_core_port_init(struct mlxsw_core *mlxsw_core, u8 local_port,
+ 	attrs.switch_id.id_len = switch_id_len;
+ 	mlxsw_core_port->local_port = local_port;
+ 	devlink_port_attrs_set(devlink_port, &attrs);
++	if (slot_index) {
++		struct mlxsw_linecard *linecard;
++
++		linecard = mlxsw_linecard_get(mlxsw_core->linecards,
++					      slot_index);
++		mlxsw_core_port->linecard = linecard;
++		devlink_port_linecard_set(devlink_port,
++					  linecard->devlink_linecard);
++	}
+ 	err = devlink_port_register(devlink, devlink_port, local_port);
+ 	if (err)
+ 		memset(mlxsw_core_port, 0, sizeof(*mlxsw_core_port));
+@@ -2883,14 +2893,14 @@ static void __mlxsw_core_port_fini(struct mlxsw_core *mlxsw_core, u8 local_port)
+ }
+ 
+ int mlxsw_core_port_init(struct mlxsw_core *mlxsw_core, u8 local_port,
+-			 u32 port_number, bool split,
++			 u8 slot_index, u32 port_number, bool split,
+ 			 u32 split_port_subnumber,
+ 			 bool splittable, u32 lanes,
+ 			 const unsigned char *switch_id,
+ 			 unsigned char switch_id_len)
+ {
+ 	return __mlxsw_core_port_init(mlxsw_core, local_port,
+-				      DEVLINK_PORT_FLAVOUR_PHYSICAL,
++				      DEVLINK_PORT_FLAVOUR_PHYSICAL, slot_index,
+ 				      port_number, split, split_port_subnumber,
+ 				      splittable, lanes,
+ 				      switch_id, switch_id_len);
+@@ -2914,7 +2924,7 @@ int mlxsw_core_cpu_port_init(struct mlxsw_core *mlxsw_core,
+ 
+ 	err = __mlxsw_core_port_init(mlxsw_core, MLXSW_PORT_CPU_PORT,
+ 				     DEVLINK_PORT_FLAVOUR_CPU,
+-				     0, false, 0, false, 0,
++				     0, 0, false, 0, false, 0,
+ 				     switch_id, switch_id_len);
+ 	if (err)
+ 		return err;
+@@ -2990,6 +3000,16 @@ mlxsw_core_port_devlink_port_get(struct mlxsw_core *mlxsw_core,
+ }
+ EXPORT_SYMBOL(mlxsw_core_port_devlink_port_get);
+ 
++struct mlxsw_linecard *
++mlxsw_core_port_linecard_get(struct mlxsw_core *mlxsw_core,
++			     u16 local_port)
++{
++	struct mlxsw_core_port *mlxsw_core_port =
++					&mlxsw_core->ports[local_port];
++
++	return mlxsw_core_port->linecard;
++}
++
+ void mlxsw_core_ports_remove_selected(struct mlxsw_core *mlxsw_core,
+ 				      bool (*selector)(void *priv, u16 local_port),
+ 				      void *priv)
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/core.h b/drivers/net/ethernet/mellanox/mlxsw/core.h
+index b9a3705ca9f1..b09f9013db77 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/core.h
++++ b/drivers/net/ethernet/mellanox/mlxsw/core.h
+@@ -214,7 +214,8 @@ void mlxsw_core_lag_mapping_clear(struct mlxsw_core *mlxsw_core,
+ 
+ void *mlxsw_core_port_driver_priv(struct mlxsw_core_port *mlxsw_core_port);
+ int mlxsw_core_port_init(struct mlxsw_core *mlxsw_core, u8 local_port,
+-			 u32 port_number, bool split, u32 split_port_subnumber,
++			 u8 slot_index, u32 port_number, bool split,
++			 u32 split_port_subnumber,
+ 			 bool splittable, u32 lanes,
+ 			 const unsigned char *switch_id,
+ 			 unsigned char switch_id_len);
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
+index 299f53c9106f..6e2d57e822c6 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
++++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
+@@ -246,7 +246,7 @@ mlxsw_m_port_create(struct mlxsw_m *mlxsw_m, u8 slot_index, u16 local_port,
+ 	module_offset = slot_index ? (slot_index - 1) *
+ 			mlxsw_m->max_module_count : 0;
+ 
+-	err = mlxsw_core_port_init(mlxsw_m->core, local_port,
++	err = mlxsw_core_port_init(mlxsw_m->core, local_port		+ module_offset, 0,
+ 				   module + 1 + module_offset, false, 0, false,
+ 				   0, mlxsw_m->base_mac,
+ 				   sizeof(mlxsw_m->base_mac));
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/spectrum.c b/drivers/net/ethernet/mellanox/mlxsw/spectrum.c
+index 466eb206d6f0..efef091e0005 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/spectrum.c
++++ b/drivers/net/ethernet/mellanox/mlxsw/spectrum.c
+@@ -1399,7 +1399,7 @@ static int mlxsw_sp_port_create(struct mlxsw_sp *mlxsw_sp, u8 local_port,
+ 	int err;
+ 
+ 	splittable = lanes > 1 && !split;
+-	err = mlxsw_core_port_init(mlxsw_sp->core, local_port,
++	err = mlxsw_core_port_init(mlxsw_sp->core, local_port, 0,
+ 				   port_mapping->module + 1, split,
+ 				   port_mapping->lane / lanes,
+ 				   splittable, lanes,
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/switchib.c b/drivers/net/ethernet/mellanox/mlxsw/switchib.c
+index 1e561132eb1e..090b9a103c04 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/switchib.c
++++ b/drivers/net/ethernet/mellanox/mlxsw/switchib.c
+@@ -280,7 +280,7 @@ static int mlxsw_sib_port_create(struct mlxsw_sib *mlxsw_sib, u8 local_port,
+ {
+ 	int err;
+ 
+-	err = mlxsw_core_port_init(mlxsw_sib->core, local_port,
++	err = mlxsw_core_port_init(mlxsw_sib->core, local_port, 0,
+ 				   module + 1, false, 0, false, 0,
+ 				   mlxsw_sib->hw_id, sizeof(mlxsw_sib->hw_id));
+ 	if (err) {
+diff --git a/drivers/net/ethernet/mellanox/mlxsw/switchx2.c b/drivers/net/ethernet/mellanox/mlxsw/switchx2.c
+index 131b2a53d261..bf8a54776861 100644
+--- a/drivers/net/ethernet/mellanox/mlxsw/switchx2.c
++++ b/drivers/net/ethernet/mellanox/mlxsw/switchx2.c
+@@ -1085,7 +1085,7 @@ static int mlxsw_sx_port_eth_create(struct mlxsw_sx *mlxsw_sx, u8 local_port,
+ {
+ 	int err;
+ 
+-	err = mlxsw_core_port_init(mlxsw_sx->core, local_port,
++	err = mlxsw_core_port_init(mlxsw_sx->core, local_port, 0,
+ 				   module + 1, false, 0, false, 0,
+ 				   mlxsw_sx->hw_id, sizeof(mlxsw_sx->hw_id));
+ 	if (err) {
+diff --git a/include/net/devlink.h b/include/net/devlink.h
+index 5d8db555155a..fafbec26d2c4 100644
+--- a/include/net/devlink.h
++++ b/include/net/devlink.h
+@@ -1461,6 +1461,8 @@ void devlink_port_attrs_pci_pf_set(struct devlink_port *devlink_port, u32 contro
+ 				   u16 pf, bool external);
+ void devlink_port_attrs_pci_vf_set(struct devlink_port *devlink_port, u32 controller,
+ 				   u16 pf, u16 vf, bool external);
++void devlink_port_linecard_set(struct devlink_port *devlink_port,
++			       struct devlink_linecard *linecard);
+ struct devlink_linecard *
+ devlink_linecard_create(struct devlink *devlink, unsigned int linecard_index,
+ 			const struct devlink_linecard_ops *ops, void *priv);
+-- 
+2.20.1
+
