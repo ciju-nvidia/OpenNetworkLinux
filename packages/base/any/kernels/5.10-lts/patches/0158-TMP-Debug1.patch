@@ -1,20 +1,20 @@
-From 8d2152c97b84b8813b4881a07042999b14e505fd Mon Sep 17 00:00:00 2001
+From 0e824f4d7a0724398af1b1ec0e33335b23381f55 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Sun, 2 Jan 2022 17:43:51 +0000
+Date: Mon, 3 Jan 2022 07:35:38 +0000
 Subject: [PATCH backport for v5.10 1/1] TMP: Debug1
 
 ---
- drivers/net/ethernet/mellanox/mlxsw/core.c    | 28 ++++++++++++++++---
+ drivers/net/ethernet/mellanox/mlxsw/core.c    | 32 +++++++++++++++----
  drivers/net/ethernet/mellanox/mlxsw/core.h    |  3 +-
- drivers/net/ethernet/mellanox/mlxsw/minimal.c |  5 ++--
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c |  5 +--
  .../net/ethernet/mellanox/mlxsw/spectrum.c    |  2 +-
  .../net/ethernet/mellanox/mlxsw/switchib.c    |  2 +-
  .../net/ethernet/mellanox/mlxsw/switchx2.c    |  2 +-
  include/net/devlink.h                         |  2 ++
- 7 files changed, 34 insertions(+), 10 deletions(-)
+ 7 files changed, 36 insertions(+), 12 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core.c b/drivers/net/ethernet/mellanox/mlxsw/core.c
-index 40aa31b4b189..f6dd7ca5a327 100644
+index 40aa31b4b189..6ed6f7022405 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core.c
 @@ -48,6 +48,7 @@ struct mlxsw_core_port {
@@ -34,6 +34,15 @@ index 40aa31b4b189..f6dd7ca5a327 100644
  				  u32 split_port_subnumber,
  				  bool splittable, u32 lanes,
  				  const unsigned char *switch_id,
+@@ -2855,7 +2856,7 @@ static int __mlxsw_core_port_init(struct mlxsw_core *mlxsw_core, u8 local_port,
+ 	struct devlink_port *devlink_port = &mlxsw_core_port->devlink_port;
+ 	struct devlink_port_attrs attrs = {};
+ 	int err;
+-
++printk("%s(%d) local_port %d slot_index %d port_number %d\n", __func__, __LINE__, local_port, slot_index, port_number);
+ 	attrs.split = split;
+ 	attrs.lanes = lanes;
+ 	attrs.splittable = splittable;
 @@ -2866,6 +2867,15 @@ static int __mlxsw_core_port_init(struct mlxsw_core *mlxsw_core, u8 local_port,
  	attrs.switch_id.id_len = switch_id_len;
  	mlxsw_core_port->local_port = local_port;
@@ -50,7 +59,14 @@ index 40aa31b4b189..f6dd7ca5a327 100644
  	err = devlink_port_register(devlink, devlink_port, local_port);
  	if (err)
  		memset(mlxsw_core_port, 0, sizeof(*mlxsw_core_port));
-@@ -2883,14 +2893,14 @@ static void __mlxsw_core_port_fini(struct mlxsw_core *mlxsw_core, u8 local_port)
+@@ -2877,20 +2887,20 @@ static void __mlxsw_core_port_fini(struct mlxsw_core *mlxsw_core, u8 local_port)
+ 	struct mlxsw_core_port *mlxsw_core_port =
+ 					&mlxsw_core->ports[local_port];
+ 	struct devlink_port *devlink_port = &mlxsw_core_port->devlink_port;
+-
++printk("%s(%d) local_port %d devlink_port %p\n", __func__, __LINE__, local_port, devlink_port);
+ 	devlink_port_unregister(devlink_port);
+ 	memset(mlxsw_core_port, 0, sizeof(*mlxsw_core_port));
  }
  
  int mlxsw_core_port_init(struct mlxsw_core *mlxsw_core, u8 local_port,
