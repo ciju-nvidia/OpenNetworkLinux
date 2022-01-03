@@ -1,7 +1,7 @@
-From be44f8408da58de3673bee65557e1d935a7af8a3 Mon Sep 17 00:00:00 2001
+From f4e7b7a191f19cfe239bd7ba0e50cc4f389c9c0f Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Wed, 22 Dec 2021 14:10:14 +0000
-Subject: [PATCH backport for v5.10 128/151] devlink: add port to line card
+Subject: [PATCH backport for v5.10 128/156] devlink: add port to line card
  relationship set
 
 In order to properly inform user about relationship between port and
@@ -17,12 +17,12 @@ RFCv2->RFCv3:
 - rebased on top of SF patchsets
 - rebased on top of devlink split name generation change
 ---
- include/net/devlink.h |  2 ++
+ include/net/devlink.h |  4 ++++
  net/core/devlink.c    | 34 ++++++++++++++++++++++++++++------
- 2 files changed, 30 insertions(+), 6 deletions(-)
+ 2 files changed, 32 insertions(+), 6 deletions(-)
 
 diff --git a/include/net/devlink.h b/include/net/devlink.h
-index d9b2b559c9a2..b4f4aa8d5df6 100644
+index d9b2b559c9a2..3d4ceb2902b8 100644
 --- a/include/net/devlink.h
 +++ b/include/net/devlink.h
 @@ -140,6 +140,8 @@ struct devlink_port {
@@ -34,6 +34,15 @@ index d9b2b559c9a2..b4f4aa8d5df6 100644
  };
  
  struct devlink_linecard_ops;
+@@ -1446,6 +1448,8 @@ void devlink_port_attrs_pci_pf_set(struct devlink_port *devlink_port, u32 contro
+ 				   u16 pf, bool external);
+ void devlink_port_attrs_pci_vf_set(struct devlink_port *devlink_port, u32 controller,
+ 				   u16 pf, u16 vf, bool external);
++void devlink_port_linecard_set(struct devlink_port *devlink_port,
++			       struct devlink_linecard *linecard);
+ struct devlink_linecard *
+ devlink_linecard_create(struct devlink *devlink, unsigned int linecard_index,
+ 			const struct devlink_linecard_ops *ops, void *priv);
 diff --git a/net/core/devlink.c b/net/core/devlink.c
 index efde6001cc2b..00806ceb6df6 100644
 --- a/net/core/devlink.c

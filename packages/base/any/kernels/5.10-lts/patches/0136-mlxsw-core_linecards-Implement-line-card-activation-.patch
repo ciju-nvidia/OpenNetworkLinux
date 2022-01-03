@@ -1,7 +1,7 @@
-From 6aedd8383896adae0788a5681e87b8207c278396 Mon Sep 17 00:00:00 2001
+From a7610730582477b5ab5c866bffd1997e1838e472 Mon Sep 17 00:00:00 2001
 From: Jiri Pirko <jiri@nvidia.com>
 Date: Fri, 22 Jan 2021 14:45:06 +0100
-Subject: [PATCH backport for v5.10 136/151] mlxsw: core_linecards: Implement
+Subject: [PATCH backport for v5.10 136/156] mlxsw: core_linecards: Implement
  line card activation process
 
 Allow to process events generated upon line card getting "ready" and

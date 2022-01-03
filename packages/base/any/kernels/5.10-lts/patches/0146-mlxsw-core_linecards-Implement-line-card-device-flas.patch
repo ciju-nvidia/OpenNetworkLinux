@@ -1,7 +1,7 @@
-From f59e4e07a7bb269da71cd9addd6dd42447797e7e Mon Sep 17 00:00:00 2001
+From 94b339f0b2a1569a724f3c0d050bd8a9bc0758f5 Mon Sep 17 00:00:00 2001
 From: Jiri Pirko <jiri@nvidia.com>
 Date: Fri, 5 Mar 2021 09:33:21 +0100
-Subject: [PATCH backport for v5.10 147/151] mlxsw: core_linecards: Implement
+Subject: [PATCH backport for v5.10 146/156] mlxsw: core_linecards: Implement
  line card device flashing
 
 Generate flash component name and register it internally within mlxsw

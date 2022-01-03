@@ -1,7 +1,7 @@
-From 5eecc169245a06c6be32a1a29dda77159ef974b2 Mon Sep 17 00:00:00 2001
+From 8841748fd48463164f0cda051df82664068e9a67 Mon Sep 17 00:00:00 2001
 From: Jiri Pirko <jiri@nvidia.com>
 Date: Fri, 4 Jun 2021 10:25:35 +0200
-Subject: [PATCH backport for v5.10 146/151] mlxfw: Get the PSID value using op
+Subject: [PATCH backport for v5.10 145/156] mlxfw: Get the PSID value using op
  instead of passing it in struct
 
 In preparation for line card device flashing, where the PSID is going to
@@ -152,10 +152,10 @@ index bcd166911d44..329ddf1b3b89 100644
  err_fsm_reactivate:
  err_state_wait_idle_to_locked:
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core.c b/drivers/net/ethernet/mellanox/mlxsw/core.c
-index 9b16d42fd00e..3ea90233c19b 100644
+index f55071982271..8c128078105a 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core.c
-@@ -889,6 +889,21 @@ struct mlxsw_core_fw_info {
+@@ -890,6 +890,21 @@ struct mlxsw_core_fw_info {
  	struct mlxsw_core *mlxsw_core;
  };
  
@@ -177,7 +177,7 @@ index 9b16d42fd00e..3ea90233c19b 100644
  static int mlxsw_core_fw_component_query(struct mlxfw_dev *mlxfw_dev,
  					 u16 component_index, u32 *p_max_size,
  					 u8 *p_align_bits, u16 *p_max_write_size)
-@@ -1027,6 +1042,8 @@ static void mlxsw_core_fw_fsm_release(struct mlxfw_dev *mlxfw_dev, u32 fwhandle)
+@@ -1028,6 +1043,8 @@ static void mlxsw_core_fw_fsm_release(struct mlxfw_dev *mlxfw_dev, u32 fwhandle)
  }
  
  static const struct mlxfw_dev_ops mlxsw_core_fw_mlxsw_dev_ops = {
@@ -186,7 +186,7 @@ index 9b16d42fd00e..3ea90233c19b 100644
  	.component_query	= mlxsw_core_fw_component_query,
  	.fsm_lock		= mlxsw_core_fw_fsm_lock,
  	.fsm_component_update	= mlxsw_core_fw_fsm_component_update,
-@@ -1044,8 +1061,6 @@ static int mlxsw_core_fw_flash(struct mlxsw_core *mlxsw_core, const struct firmw
+@@ -1045,8 +1062,6 @@ static int mlxsw_core_fw_flash(struct mlxsw_core *mlxsw_core, const struct firmw
  	struct mlxsw_core_fw_info mlxsw_core_fw_info = {
  		.mlxfw_dev = {
  			.ops = &mlxsw_core_fw_mlxsw_dev_ops,

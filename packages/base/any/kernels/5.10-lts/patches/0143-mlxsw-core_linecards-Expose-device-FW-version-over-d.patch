@@ -1,7 +1,7 @@
-From 1ae49d592c4c816b8f68eaf8d0216efe5fa1ca31 Mon Sep 17 00:00:00 2001
+From 60b137f7174e51f93e80d559f789993a799d6ed6 Mon Sep 17 00:00:00 2001
 From: Jiri Pirko <jiri@nvidia.com>
 Date: Thu, 10 Jun 2021 15:32:00 +0200
-Subject: [PATCH backport for v5.10 144/151] mlxsw: core_linecards: Expose
+Subject: [PATCH backport for v5.10 143/156] mlxsw: core_linecards: Expose
  device FW version over device info
 
 Extend MDDQ to obtain FW version of line card device and implement

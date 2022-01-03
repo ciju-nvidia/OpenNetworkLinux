@@ -1,7 +1,7 @@
-From 40cbaeb0ab3cc7a94ac747edbaebb695a764ada7 Mon Sep 17 00:00:00 2001
+From 2204349732b4c58aa2c3aba910fe43065dba0c22 Mon Sep 17 00:00:00 2001
 From: Jiri Pirko <jiri@nvidia.com>
 Date: Fri, 22 Jan 2021 15:01:06 +0100
-Subject: [PATCH backport for v5.10 148/151] mlxsw: core_linecards: Introduce
+Subject: [PATCH backport for v5.10 147/156] mlxsw: core_linecards: Introduce
  ops for linecards status change tracking
 
 Introduce an infrastructure allowing the core to register set of ops
@@ -15,10 +15,10 @@ Signed-off-by: Jiri Pirko <jiri@nvidia.com>
  2 files changed, 150 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core.h b/drivers/net/ethernet/mellanox/mlxsw/core.h
-index 48df0afc6e43..c736da8413ac 100644
+index 30f00da0a48d..10ea541bb19d 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core.h
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core.h
-@@ -581,4 +581,26 @@ int mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
+@@ -582,4 +582,26 @@ int mlxsw_linecard_status_process(struct mlxsw_core *mlxsw_core,
  int mlxsw_linecard_bct_process(struct mlxsw_core *mlxsw_core,
  			       const char *mbct_pl);
  

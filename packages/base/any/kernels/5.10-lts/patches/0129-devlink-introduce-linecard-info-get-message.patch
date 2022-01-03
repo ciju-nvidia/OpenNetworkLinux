@@ -1,7 +1,7 @@
-From 3917d375eabf434504cacf5cc5750153b9ccd35d Mon Sep 17 00:00:00 2001
+From f62f20bc47e2ae22c153534fa1fc025ed2819cf2 Mon Sep 17 00:00:00 2001
 From: Jiri Pirko <jiri@nvidia.com>
 Date: Fri, 19 Feb 2021 09:36:15 +0100
-Subject: [PATCH backport for v5.10 129/151] devlink: introduce linecard info
+Subject: [PATCH backport for v5.10 129/156] devlink: introduce linecard info
  get message
 
 Allow the driver to provide per line card info get op to fill-up info,
@@ -15,7 +15,7 @@ Signed-off-by: Jiri Pirko <jiri@nvidia.com>
  3 files changed, 140 insertions(+), 5 deletions(-)
 
 diff --git a/include/net/devlink.h b/include/net/devlink.h
-index b4f4aa8d5df6..e2dc69941d48 100644
+index 3d4ceb2902b8..059bed6aef3c 100644
 --- a/include/net/devlink.h
 +++ b/include/net/devlink.h
 @@ -162,6 +162,8 @@ struct devlink_linecard {

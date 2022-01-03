@@ -1,7 +1,7 @@
-From 9794826c8b1d50ff27360606d0fc2be38eb36c0e Mon Sep 17 00:00:00 2001
+From 8eacd42179ec7c19624489636bdcd794955762b4 Mon Sep 17 00:00:00 2001
 From: Jiri Pirko <jiri@nvidia.com>
 Date: Fri, 26 Feb 2021 13:15:09 +0100
-Subject: [PATCH backport for v5.10 143/151] mlxsw: core_linecards: Probe
+Subject: [PATCH backport for v5.10 142/156] mlxsw: core_linecards: Probe
  devices for provisioned line card and attach them
 
 In case the line card is provisioned, go over all possible existing
@@ -15,10 +15,10 @@ Signed-off-by: Jiri Pirko <jiri@nvidia.com>
  2 files changed, 108 insertions(+), 8 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core.h b/drivers/net/ethernet/mellanox/mlxsw/core.h
-index 70f97ef74a2c..ed7077bef907 100644
+index 8e738ddb39c8..593470d14815 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core.h
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core.h
-@@ -532,6 +532,9 @@ struct mlxsw_linecard {
+@@ -533,6 +533,9 @@ struct mlxsw_linecard {
  	bool ready;
  	bool active;
  	bool unprovision_done;

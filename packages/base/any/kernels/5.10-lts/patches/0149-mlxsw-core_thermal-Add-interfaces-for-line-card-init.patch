@@ -1,7 +1,7 @@
-From ef42ffc835b581cb6c520ed68db0b0cc69ba0790 Mon Sep 17 00:00:00 2001
+From 0d14ea822b8dc332582bb9440656f605f71b22b9 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Wed, 12 May 2021 22:57:39 +0300
-Subject: [PATCH backport for v5.10 150/151] mlxsw: core_thermal: Add
+Subject: [PATCH backport for v5.10 149/156] mlxsw: core_thermal: Add
  interfaces for line card initialization and de-initialization
 
 Add callback functions for line card thermal area initialization and

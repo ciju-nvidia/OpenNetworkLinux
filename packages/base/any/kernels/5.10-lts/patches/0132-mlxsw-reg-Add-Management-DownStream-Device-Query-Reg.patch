@@ -1,21 +1,21 @@
-From 26e4aba8d818a481af2d2c9306ac5a3ee2fd14bc Mon Sep 17 00:00:00 2001
-From: Jiri Pirko <jiri@nvidia.com>
-Date: Thu, 10 Dec 2020 17:21:26 +0100
-Subject: [PATCH backport for v5.10 132/151] mlxsw: reg: Add Management
+From b9b87c69ab17e6ec6e2bc8959385158d609ed43e Mon Sep 17 00:00:00 2001
+From: Vadim Pasternak <vadimp@nvidia.com>
+Date: Mon, 3 Jan 2022 10:20:49 +0000
+Subject: [PATCH backport for v5.10 132/156] mlxsw: reg: Add Management
  DownStream Device Query Register
 
 The MDDQ register allows to query the DownStream device properties.
 
 Signed-off-by: Jiri Pirko <jiri@nvidia.com>
 ---
- drivers/net/ethernet/mellanox/mlxsw/reg.h | 149 ++++++++++++++++++++++
- 1 file changed, 149 insertions(+)
+ drivers/net/ethernet/mellanox/mlxsw/reg.h | 234 ++++++++++++++++++++++
+ 1 file changed, 234 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/reg.h b/drivers/net/ethernet/mellanox/mlxsw/reg.h
-index 1f8193c225e1..ee44c808fd15 100644
+index 1f8193c225e1..3a0973696dbc 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/reg.h
 +++ b/drivers/net/ethernet/mellanox/mlxsw/reg.h
-@@ -10296,6 +10296,154 @@ mlxsw_reg_mgpir_unpack(char *payload, u8 *num_of_devices,
+@@ -10296,6 +10296,239 @@ mlxsw_reg_mgpir_unpack(char *payload, u8 *num_of_devices,
  		*num_of_slots = mlxsw_reg_mgpir_num_of_slots_get(payload);
  }
  
@@ -40,7 +40,11 @@ index 1f8193c225e1..ee44c808fd15 100644
 +
 +enum mlxsw_reg_mddq_query_type {
 +	MLXSW_REG_MDDQ_QUERY_TYPE_SLOT_INFO = 1,
-+	MLXSW_REG_MDDQ_QUERY_TYPE_SLOT_NAME = 3,
++	MLXSW_REG_MDDQ_QUERY_TYPE_DEVICE_INFO, /* If there are no devices
++						* on the slot, data_valid
++						* will be '0'.
++						*/
++	MLXSW_REG_MDDQ_QUERY_TYPE_SLOT_NAME,
 +};
 +
 +/* reg_mddq_query_type
@@ -53,6 +57,28 @@ index 1f8193c225e1..ee44c808fd15 100644
 + * Access: Index
 + */
 +MLXSW_ITEM32(reg, mddq, slot_index, 0x00, 0, 4);
++
++/* reg_mddq_response_msg_seq
++ * Response message sequential number. For a specific request, the response
++ * message sequential number is the following one. In addition, the last
++ * message should be 0.
++ * Access: RO
++ */
++MLXSW_ITEM32(reg, mddq, response_msg_seq, 0x04, 16, 8);
++
++/* reg_mddq_request_msg_seq
++ * Request message sequential number.
++ * The first message number should be 0.
++ * Access: Index
++ */
++MLXSW_ITEM32(reg, mddq, request_msg_seq, 0x04, 0, 8);
++
++/* reg_mddq_data_valid
++ * If set, the data in the data field is valid and contain the information
++ * for the queried index.
++ * Access: RO
++ */
++MLXSW_ITEM32(reg, mddq, data_valid, 0x08, 31, 1);
 +
 +/* reg_mddq_provisioned
 + * If set, the INI file is applied and the card is provisioned.
@@ -145,6 +171,65 @@ index 1f8193c225e1..ee44c808fd15 100644
 +	*p_card_type = mlxsw_reg_mddq_card_type_get(payload);
 +}
 +
++/* reg_mddq_flash_owner
++ * If set, the device is the flash owner. Otherwise, a shared flash
++ * is used by this device (another device is the flash owner).
++ * Access: RO
++ */
++MLXSW_ITEM32(reg, mddq, flash_owner, 0x10, 30, 1);
++
++/* reg_mddq_device_index
++ * Device index. The first device should number 0.
++ * Access: RO
++ */
++MLXSW_ITEM32(reg, mddq, device_index, 0x10, 0, 8);
++
++/* reg_mddq_fw_major
++ * Major FW version number.
++ * Access: RO
++ */
++MLXSW_ITEM32(reg, mddq, fw_major, 0x14, 16, 16);
++
++/* reg_mddq_fw_minor
++ * Minor FW version number.
++ * Access: RO
++ */
++MLXSW_ITEM32(reg, mddq, fw_minor, 0x18, 16, 16);
++
++/* reg_mddq_fw_sub_minor
++ * Sub-minor FW version number.
++ * Access: RO
++ */
++MLXSW_ITEM32(reg, mddq, fw_sub_minor, 0x18, 0, 16);
++
++static inline void
++mlxsw_reg_mddq_device_info_pack(char *payload, u8 slot_index,
++				u8 request_msg_seq)
++{
++	__mlxsw_reg_mddq_pack(payload, slot_index,
++			      MLXSW_REG_MDDQ_QUERY_TYPE_DEVICE_INFO);
++	mlxsw_reg_mddq_request_msg_seq_set(payload, request_msg_seq);
++}
++
++static inline void
++mlxsw_reg_mddq_device_info_unpack(const char *payload, u8 *p_response_msg_seq,
++				  bool *p_data_valid, bool *p_flash_owner,
++				  u8 *p_device_index, u16 *p_fw_major,
++				  u16 *p_fw_minor, u16 *p_fw_sub_minor)
++{
++	*p_response_msg_seq = mlxsw_reg_mddq_response_msg_seq_get(payload);
++	*p_data_valid = mlxsw_reg_mddq_data_valid_get(payload);
++	if (p_flash_owner)
++		*p_flash_owner = mlxsw_reg_mddq_flash_owner_get(payload);
++	*p_device_index = mlxsw_reg_mddq_device_index_get(payload);
++	if (p_fw_major)
++		*p_fw_major = mlxsw_reg_mddq_fw_major_get(payload);
++	if (p_fw_minor)
++		*p_fw_minor = mlxsw_reg_mddq_fw_minor_get(payload);
++	if (p_fw_sub_minor)
++		*p_fw_sub_minor = mlxsw_reg_mddq_fw_sub_minor_get(payload);
++}
++
 +#define MLXSW_REG_MDDQ_SLOT_ACII_NAME_LEN 20
 +
 +/* reg_mddq_slot_ascii_name
@@ -170,7 +255,7 @@ index 1f8193c225e1..ee44c808fd15 100644
  /* MFDE - Monitoring FW Debug Register
   * -----------------------------------
   */
-@@ -11495,6 +11643,7 @@ static const struct mlxsw_reg_info *mlxsw_reg_infos[] = {
+@@ -11495,6 +11728,7 @@ static const struct mlxsw_reg_info *mlxsw_reg_infos[] = {
  	MLXSW_REG(mtptpt),
  	MLXSW_REG(mfgd),
  	MLXSW_REG(mgpir),

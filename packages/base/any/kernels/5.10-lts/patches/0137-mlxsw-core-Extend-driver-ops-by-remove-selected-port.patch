@@ -1,7 +1,7 @@
-From 958e7e1014db361cdc5844ce3d5bfb7aebca2f5e Mon Sep 17 00:00:00 2001
+From 835f21571a0f370142572e1d336b34b6b87330bd Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Wed, 22 Dec 2021 16:26:43 +0000
-Subject: [PATCH backport for v5.10 137/151] mlxsw: core: Extend driver ops by
+Subject: [PATCH backport for v5.10 137/156] mlxsw: core: Extend driver ops by
  remove selected ports op
 
 In case of line card implementation, the core has to have a way to

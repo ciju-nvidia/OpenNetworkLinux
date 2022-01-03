@@ -1,7 +1,7 @@
-From 73af23ea0d22ae88cd477dfa3385718ee2b4f174 Mon Sep 17 00:00:00 2001
+From 9a4b63159d9939e465cee17d0a0bd5d091243cc5 Mon Sep 17 00:00:00 2001
 From: Jiri Pirko <jiri@nvidia.com>
 Date: Tue, 19 Jan 2021 12:16:58 +0100
-Subject: [PATCH backport for v5.10 133/151] mlxsw: reg: Add Management
+Subject: [PATCH backport for v5.10 133/156] mlxsw: reg: Add Management
  DownStream Device Control Register
 
 The MDDC register allows control downstream devices and line cards.
@@ -12,10 +12,10 @@ Signed-off-by: Jiri Pirko <jiri@nvidia.com>
  1 file changed, 37 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/reg.h b/drivers/net/ethernet/mellanox/mlxsw/reg.h
-index ee44c808fd15..e4758e2d2f02 100644
+index 3a0973696dbc..8f97f33c94e0 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/reg.h
 +++ b/drivers/net/ethernet/mellanox/mlxsw/reg.h
-@@ -10444,6 +10444,42 @@ mlxsw_reg_mddq_slot_name_unpack(const char *payload, char *slot_ascii_name)
+@@ -10529,6 +10529,42 @@ mlxsw_reg_mddq_slot_name_unpack(const char *payload, char *slot_ascii_name)
  	mlxsw_reg_mddq_slot_ascii_name_memcpy_from(payload, slot_ascii_name);
  }
  
@@ -58,7 +58,7 @@ index ee44c808fd15..e4758e2d2f02 100644
  /* MFDE - Monitoring FW Debug Register
   * -----------------------------------
   */
-@@ -11644,6 +11680,7 @@ static const struct mlxsw_reg_info *mlxsw_reg_infos[] = {
+@@ -11729,6 +11765,7 @@ static const struct mlxsw_reg_info *mlxsw_reg_infos[] = {
  	MLXSW_REG(mfgd),
  	MLXSW_REG(mgpir),
  	MLXSW_REG(mddq),

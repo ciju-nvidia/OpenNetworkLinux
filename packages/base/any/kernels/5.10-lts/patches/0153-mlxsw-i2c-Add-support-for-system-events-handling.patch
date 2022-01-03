@@ -1,7 +1,7 @@
-From f8d7f7fba170a2be4e6adb95a1048793cdaf39e6 Mon Sep 17 00:00:00 2001
+From 56abd848ef5fde48532dfa3921e5fc0569fff09d Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Sun, 19 Dec 2021 09:12:58 +0000
-Subject: [PATCH backport for v5.10 154/157] mlxsw: i2c: Add support for system
+Subject: [PATCH backport for v5.10 153/156] mlxsw: i2c: Add support for system
  events handling
 
 Extend i2c bus driver with interrupt handler to support system specific

@@ -1,7 +1,7 @@
-From 34644ef305b02824c4a2f4975b6310d35d7d880c Mon Sep 17 00:00:00 2001
+From a7ea57f715a01b3a94658cf4e70e9df593ff2bc3 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Wed, 22 Dec 2021 16:06:54 +0000
-Subject: [PATCH backport for v5.10 135/151] mlxsw: core_linecards: Add line
+Subject: [PATCH backport for v5.10 135/156] mlxsw: core_linecards: Add line
  card objects and implement provisioning
 
 Introduce objects for line cards and an infrastructure around that.

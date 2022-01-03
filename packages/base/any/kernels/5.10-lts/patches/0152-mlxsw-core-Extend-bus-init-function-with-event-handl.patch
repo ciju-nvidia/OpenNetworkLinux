@@ -1,7 +1,7 @@
-From 13852fa66e2af89bd86e68be72eaf47f5f89e1a3 Mon Sep 17 00:00:00 2001
+From 5ebc9aabf005cb3a337363bf2c9ffc88b4e25391 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Wed, 15 Dec 2021 08:59:14 +0000
-Subject: [PATCH backport for v5.10 153/157] mlxsw: core: Extend bus init
+Subject: [PATCH backport for v5.10 152/156] mlxsw: core: Extend bus init
  function with event handler argument
 
 The purpose of new argument - is to introduce system event handler for
@@ -16,10 +16,10 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  4 files changed, 13 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core.c b/drivers/net/ethernet/mellanox/mlxsw/core.c
-index 3ea90233c19b..5f31fb26bb1d 100644
+index 8c128078105a..a9bb43837b33 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core.c
-@@ -2004,7 +2004,8 @@ __mlxsw_core_bus_device_register(const struct mlxsw_bus_info *mlxsw_bus_info,
+@@ -2005,7 +2005,8 @@ __mlxsw_core_bus_device_register(const struct mlxsw_bus_info *mlxsw_bus_info,
  	}
  
  	res = mlxsw_driver->res_query_enabled ? &mlxsw_core->res : NULL;
@@ -30,10 +30,10 @@ index 3ea90233c19b..5f31fb26bb1d 100644
  		goto err_bus_init;
  
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core.h b/drivers/net/ethernet/mellanox/mlxsw/core.h
-index c736da8413ac..b9a3705ca9f1 100644
+index 10ea541bb19d..b09f9013db77 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/core.h
 +++ b/drivers/net/ethernet/mellanox/mlxsw/core.h
-@@ -389,6 +389,7 @@ struct mlxsw_driver {
+@@ -390,6 +390,7 @@ struct mlxsw_driver {
  	 */
  	void (*ptp_transmitted)(struct mlxsw_core *mlxsw_core,
  				struct sk_buff *skb, u8 local_port);
@@ -41,7 +41,7 @@ index c736da8413ac..b9a3705ca9f1 100644
  
  	u8 txhdr_len;
  	const struct mlxsw_config_profile *profile;
-@@ -431,7 +432,8 @@ struct mlxsw_bus {
+@@ -432,7 +433,8 @@ struct mlxsw_bus {
  	const char *kind;
  	int (*init)(void *bus_priv, struct mlxsw_core *mlxsw_core,
  		    const struct mlxsw_config_profile *profile,

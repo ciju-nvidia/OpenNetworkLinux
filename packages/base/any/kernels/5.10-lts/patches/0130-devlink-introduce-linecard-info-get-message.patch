@@ -1,7 +1,7 @@
-From 4008df21af5108c4950ec63d91462a9aaa9149b9 Mon Sep 17 00:00:00 2001
+From 20fd2ae5a319b7fe8fa4aa13e2bd548e29bcff34 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Wed, 22 Dec 2021 15:11:36 +0000
-Subject: [PATCH backport for v5.10 130/151] devlink: introduce linecard info
+Subject: [PATCH backport for v5.10 130/156] devlink: introduce linecard info
  get message
 
 Allow the driver to provide per line card info get op to fill-up info,
@@ -24,7 +24,7 @@ Signed-off-by: Jiri Pirko <jiri@nvidia.com>
  3 files changed, 182 insertions(+)
 
 diff --git a/include/net/devlink.h b/include/net/devlink.h
-index e2dc69941d48..ab01684a49f2 100644
+index 059bed6aef3c..06b61c1d7938 100644
 --- a/include/net/devlink.h
 +++ b/include/net/devlink.h
 @@ -160,9 +160,11 @@ struct devlink_linecard {
@@ -49,7 +49,7 @@ index e2dc69941d48..ab01684a49f2 100644
  };
  
  struct devlink_sb_pool_info {
-@@ -1457,6 +1462,13 @@ struct devlink_linecard *
+@@ -1459,6 +1464,13 @@ struct devlink_linecard *
  devlink_linecard_create(struct devlink *devlink, unsigned int linecard_index,
  			const struct devlink_linecard_ops *ops, void *priv);
  void devlink_linecard_destroy(struct devlink_linecard *linecard);
