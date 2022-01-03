@@ -1,17 +1,17 @@
-From 0e824f4d7a0724398af1b1ec0e33335b23381f55 Mon Sep 17 00:00:00 2001
+From 175c28808d1b025d0bcc17f9304c7e4ee06f4ad9 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Mon, 3 Jan 2022 07:35:38 +0000
+Date: Mon, 3 Jan 2022 09:32:57 +0000
 Subject: [PATCH backport for v5.10 1/1] TMP: Debug1
 
 ---
  drivers/net/ethernet/mellanox/mlxsw/core.c    | 32 +++++++++++++++----
  drivers/net/ethernet/mellanox/mlxsw/core.h    |  3 +-
- drivers/net/ethernet/mellanox/mlxsw/minimal.c |  5 +--
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c |  9 ++++--
  .../net/ethernet/mellanox/mlxsw/spectrum.c    |  2 +-
  .../net/ethernet/mellanox/mlxsw/switchib.c    |  2 +-
  .../net/ethernet/mellanox/mlxsw/switchx2.c    |  2 +-
  include/net/devlink.h                         |  2 ++
- 7 files changed, 36 insertions(+), 12 deletions(-)
+ 7 files changed, 39 insertions(+), 13 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/core.c b/drivers/net/ethernet/mellanox/mlxsw/core.c
 index 40aa31b4b189..6ed6f7022405 100644
@@ -124,7 +124,7 @@ index b9a3705ca9f1..b09f9013db77 100644
  			 const unsigned char *switch_id,
  			 unsigned char switch_id_len);
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index 299f53c9106f..6e39c6d7cdac 100644
+index 299f53c9106f..2c54aef1e89d 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 @@ -246,7 +246,7 @@ mlxsw_m_port_create(struct mlxsw_m *mlxsw_m, u8 slot_index, u16 local_port,
@@ -136,16 +136,28 @@ index 299f53c9106f..6e39c6d7cdac 100644
  				   module + 1 + module_offset, false, 0, false,
  				   0, mlxsw_m->base_mac,
  				   sizeof(mlxsw_m->base_mac));
-@@ -322,7 +322,8 @@ static void mlxsw_m_port_remove(struct mlxsw_m *mlxsw_m, u8 slot_index,
+@@ -317,16 +317,19 @@ static void mlxsw_m_port_remove(struct mlxsw_m *mlxsw_m, u8 slot_index,
+ {
+ 	struct mlxsw_m_port_mapping *port_mapping;
+ 	struct mlxsw_m_port *mlxsw_m_port;
++	u8 module_offset;
+ 
+ 	port_mapping = mlxsw_m_port_mapping_get(mlxsw_m, slot_index,
  						local_port);
  	mlxsw_m_port = port_mapping->port;
++	module_offset = mlxsw_m_port->module_offset;
  
 -	mlxsw_core_port_clear(mlxsw_m->core, local_port, mlxsw_m);
-+	mlxsw_core_port_clear(mlxsw_m->core, local_port +
-+			      mlxsw_m_port->module_offset, mlxsw_m);
++	mlxsw_core_port_clear(mlxsw_m->core, local_port + module_offset,
++			      mlxsw_m);
  	unregister_netdev(mlxsw_m_port->dev); /* This calls ndo_stop */
  	port_mapping->port = NULL;
  	free_netdev(mlxsw_m_port->dev);
+-	mlxsw_core_port_fini(mlxsw_m->core, local_port);
++	mlxsw_core_port_fini(mlxsw_m->core, local_port + module_offset);
+ }
+ 
+ static int mlxsw_m_port_module_map(struct mlxsw_m *mlxsw_m, u8 slot_index,
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/spectrum.c b/drivers/net/ethernet/mellanox/mlxsw/spectrum.c
 index 466eb206d6f0..efef091e0005 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/spectrum.c
