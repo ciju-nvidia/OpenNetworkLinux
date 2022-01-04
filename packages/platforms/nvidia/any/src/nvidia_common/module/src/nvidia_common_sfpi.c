@@ -43,13 +43,15 @@ int get_sfp_port_num(void);
 static int
 mc_sfp_node_read_int(char *node_path, int *value)
 {
-    int  data_len = 0, ret = 0;
+    int  ret = 0;
+#if SPF_READ_SUPPORT
+    int  data_len = 0;
     char buf[SFP_SYSFS_VALUE_LEN] = {0};
-    *value = -1;
     char sfp_present_status[16];
     char sfp_not_present_status[16];
     char bash_keyword[] = "#!/bin/bash";
     FILE * cmd;
+    *value = -1;
 
     if (mc_get_kernel_ver() >= KERNEL_VERSION(4,9,30)) {
         strcpy(sfp_present_status, "1");
@@ -75,6 +77,9 @@ mc_sfp_node_read_int(char *node_path, int *value)
             *value = 0;
         }
     }
+#else
+    *value = 0;
+#endif
 
     return ret;
 }
