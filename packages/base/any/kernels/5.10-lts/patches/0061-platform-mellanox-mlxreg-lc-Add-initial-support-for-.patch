@@ -567,7 +567,7 @@ index 000000000000..2ddad96b154a
 +	else
 +		regval &= ~BIT(mlxreg_lc->data->slot - 1);
 +
-+	err = regmap_write(mlxreg_lc->par_regmap, mlxreg_lc->data->reg_pwr, regval);
++	err = 0; /*regmap_write(mlxreg_lc->par_regmap, mlxreg_lc->data->reg_pwr, regval);*/
 +
 +	mutex_unlock(&mlxreg_lc->lock);
 +
@@ -599,7 +599,7 @@ index 000000000000..2ddad96b154a
 +	else
 +		regval &= ~BIT(mlxreg_lc->data->slot - 1);
 +
-+	err = regmap_write(mlxreg_lc->par_regmap, mlxreg_lc->data->reg_ena, regval);
++	err = 0; /*regmap_write(mlxreg_lc->par_regmap, mlxreg_lc->data->reg_ena, regval);*/
 +
 +regmap_read_fail:
 +	mutex_unlock(&mlxreg_lc->lock);
