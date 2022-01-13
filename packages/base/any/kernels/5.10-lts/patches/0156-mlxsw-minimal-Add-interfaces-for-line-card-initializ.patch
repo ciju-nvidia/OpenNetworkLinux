@@ -1,7 +1,7 @@
-From 2af8aef1f757f28dcca5c6ed93e522bd9ba08f41 Mon Sep 17 00:00:00 2001
+From 183b02c7935d98cd752f0fec34650d2346fe8ddc Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Sun, 19 Dec 2021 09:40:34 +0000
-Subject: [PATCH backport for v5.10 156/156] mlxsw: minimal: Add interfaces for
+Subject: [PATCH mlxsw/net-next 156/156] mlxsw: minimal: Add interfaces for
  line card initialization and de-initialization
 
 Add callback functions for line card 'netdevice' objects initialization
@@ -18,10 +18,10 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  1 file changed, 70 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index 44e23c75a6b7..2c54aef1e89d 100644
+index 680720d13..cdaa0bb5c 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-@@ -549,6 +549,69 @@ static void mlxsw_m_sys_event_handler(struct mlxsw_core *mlxsw_core)
+@@ -553,6 +553,69 @@ static void mlxsw_m_sys_event_handler(struct mlxsw_core *mlxsw_core)
  	}
  }
  
@@ -91,7 +91,7 @@ index 44e23c75a6b7..2c54aef1e89d 100644
  static int mlxsw_m_init(struct mlxsw_core *mlxsw_core,
  			const struct mlxsw_bus_info *mlxsw_bus_info,
  			struct netlink_ext_ack *extack)
-@@ -587,8 +650,14 @@ static int mlxsw_m_init(struct mlxsw_core *mlxsw_core,
+@@ -591,8 +654,14 @@ static int mlxsw_m_init(struct mlxsw_core *mlxsw_core,
  		goto err_mlxsw_m_ports_create;
  	}
  
@@ -106,7 +106,7 @@ index 44e23c75a6b7..2c54aef1e89d 100644
  err_mlxsw_m_ports_create:
  	mlxsw_m_line_cards_free(mlxsw_m);
  	return err;
-@@ -598,6 +667,7 @@ static void mlxsw_m_fini(struct mlxsw_core *mlxsw_core)
+@@ -602,6 +671,7 @@ static void mlxsw_m_fini(struct mlxsw_core *mlxsw_core)
  {
  	struct mlxsw_m *mlxsw_m = mlxsw_core_driver_priv(mlxsw_core);
  
