@@ -1,80 +1,41 @@
-From 390f2de595787024aa5e89695060e3a375bed9a8 Mon Sep 17 00:00:00 2001
+From 4cd647cfcb9afaefed3b7587860e28811de25ffc Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
-Date: Mon, 10 Jan 2022 13:55:35 +0200
+Date: Thu, 13 Jan 2022 18:32:19 +0200
 Subject: [PATCH mlxsw/net-next 1/1] TMP: Debug
 
 ---
- drivers/net/ethernet/mellanox/mlxsw/minimal.c | 24 +++++++++++--------
- 1 file changed, 14 insertions(+), 10 deletions(-)
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index 2c54aef1e..d99f68053 100644
+index 599d6cc0f..cdaa0bb5c 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-@@ -46,6 +46,7 @@ struct mlxsw_m_port_mapping {
- struct mlxsw_m_line_card {
- 	struct mlxsw_m *mlxsw_m;
- 	u8 max_ports;
+@@ -241,11 +241,13 @@ mlxsw_m_port_create(struct mlxsw_m *mlxsw_m, u8 slot_index, u16 local_port,
+ 	struct mlxsw_m_port_mapping *port_mapping;
+ 	struct mlxsw_m_port *mlxsw_m_port;
+ 	struct net_device *dev;
 +	u8 module_offset;
- 	bool active;
- 	struct mlxsw_m_port_mapping port_mapping[];
- };
-@@ -243,10 +244,8 @@ mlxsw_m_port_create(struct mlxsw_m *mlxsw_m, u8 slot_index, u16 local_port,
- 	u8 module_offset;
  	int err;
  
--	module_offset = slot_index ? (slot_index - 1) *
--			mlxsw_m->max_module_count : 0;
--
--	err = mlxsw_core_port_init(mlxsw_m->core, local_port + module_offset, 0,
 +	module_offset = mlxsw_m->line_cards[slot_index]->module_offset;
-+	err = mlxsw_core_port_init(mlxsw_m->core, local_port, slot_index,
- 				   module + 1 + module_offset, false, 0, false,
- 				   0, mlxsw_m->base_mac,
+ 	err = mlxsw_core_port_init(mlxsw_m->core, local_port, slot_index,
+-				   module + 1, false, 0, false, 0,
+-				   mlxsw_m->base_mac,
++				   module + 1 + module_offset, false, 0, false,
++				   0, mlxsw_m->base_mac,
  				   sizeof(mlxsw_m->base_mac));
-@@ -329,7 +328,7 @@ static void mlxsw_m_port_remove(struct mlxsw_m *mlxsw_m, u8 slot_index,
- 	unregister_netdev(mlxsw_m_port->dev); /* This calls ndo_stop */
- 	port_mapping->port = NULL;
- 	free_netdev(mlxsw_m_port->dev);
--	mlxsw_core_port_fini(mlxsw_m->core, local_port + module_offset);
-+	mlxsw_core_port_fini(mlxsw_m->core, local_port);
- }
+ 	if (err) {
+ 		dev_err(mlxsw_m->bus_info->dev, "Port %d: Failed to init core port\n",
+@@ -272,7 +274,7 @@ mlxsw_m_port_create(struct mlxsw_m *mlxsw_m, u8 slot_index, u16 local_port,
+ 	 * multiplied by maximum modules number, which could be found on a line
+ 	 * card.
+ 	 */
+-	mlxsw_m_port->module_offset = mlxsw_m->line_cards[slot_index]->module_offset;
++	mlxsw_m_port->module_offset = module_offset;
  
- static int mlxsw_m_port_module_map(struct mlxsw_m *mlxsw_m, u8 slot_index,
-@@ -361,6 +360,7 @@ mlxsw_m_port_module_unmap(struct mlxsw_m *mlxsw_m, u8 slot_index,
- static int mlxsw_m_ports_create(struct mlxsw_m *mlxsw_m, u8 slot_index)
- {
- 	struct mlxsw_m_port_mapping *port_mapping;
-+	struct mlxsw_m_line_card *line_card;
- 	char mgpir_pl[MLXSW_REG_MGPIR_LEN];
- 	int i, err;
- 
-@@ -369,16 +369,20 @@ static int mlxsw_m_ports_create(struct mlxsw_m *mlxsw_m, u8 slot_index)
- 	if (err)
- 		return err;
- 
-+	line_card = mlxsw_m->line_cards[slot_index];
- 	mlxsw_reg_mgpir_unpack(mgpir_pl, NULL, NULL, NULL,
--			       &mlxsw_m->line_cards[slot_index]->max_ports,
--			       NULL);
--	if (!mlxsw_m->line_cards[slot_index]->max_ports)
-+			       &line_card->max_ports, NULL);
-+	if (!line_card->max_ports)
- 		return 0;
- 
--	mlxsw_m->line_cards[slot_index]->max_ports += 1;
-+	line_card->max_ports += 1;
-+	line_card->module_offset = slot_index ? (slot_index - 1) *
-+				   mlxsw_m->max_module_count : 0;
-+
- 	/* Fill out module to local port mapping array */
- 	for (i = 1; i < mlxsw_m->line_cards[slot_index]->max_ports; i++) {
--		err = mlxsw_m_port_module_map(mlxsw_m, slot_index, i, i - 1);
-+		err = mlxsw_m_port_module_map(mlxsw_m, slot_index, i +
-+					      line_card->module_offset, i - 1);
- 		if (err)
- 			goto err_module_to_port_map;
- 	}
+ 	dev->netdev_ops = &mlxsw_m_port_netdev_ops;
+ 	dev->ethtool_ops = &mlxsw_m_port_ethtool_ops;
 -- 
 2.20.1
 
