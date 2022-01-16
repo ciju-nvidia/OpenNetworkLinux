@@ -1,4 +1,4 @@
-From 43d54e2ebd6d7d258dbbdb6816cda8dbc554defb Mon Sep 17 00:00:00 2001
+From 32dfc314d46d0563b3e1b1fd7c2bed0ce88fe3d5 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Sun, 19 Dec 2021 09:25:35 +0000
 Subject: [PATCH mlxsw/net-next 155/156] mlxsw: minimal: Add system event
@@ -17,10 +17,10 @@ Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
  1 file changed, 23 insertions(+)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index d4336c7df..680720d13 100644
+index 59c5053dc..27afb28e4 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-@@ -531,6 +531,28 @@ static void mlxsw_m_line_cards_free(struct mlxsw_m *mlxsw_m)
+@@ -527,6 +527,28 @@ static void mlxsw_m_line_cards_free(struct mlxsw_m *mlxsw_m)
  	kfree(mlxsw_m->line_cards);
  }
  
@@ -49,7 +49,7 @@ index d4336c7df..680720d13 100644
  static int mlxsw_m_init(struct mlxsw_core *mlxsw_core,
  			const struct mlxsw_bus_info *mlxsw_bus_info,
  			struct netlink_ext_ack *extack)
-@@ -591,6 +613,7 @@ static struct mlxsw_driver mlxsw_m_driver = {
+@@ -587,6 +609,7 @@ static struct mlxsw_driver mlxsw_m_driver = {
  	.priv_size		= sizeof(struct mlxsw_m),
  	.init			= mlxsw_m_init,
  	.fini			= mlxsw_m_fini,

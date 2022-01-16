@@ -1,4 +1,4 @@
-From 5955c9d87043d1a1f2a2f186ae9a1bc168f66885 Mon Sep 17 00:00:00 2001
+From cb6b96d443eb1947cab3b4995a1a4caa579bf238 Mon Sep 17 00:00:00 2001
 From: Vadim Pasternak <vadimp@nvidia.com>
 Date: Thu, 30 Dec 2021 16:02:59 +0000
 Subject: [PATCH mlxsw/net-next 151/156] mlxsw: minimal: Prepare driver for
@@ -20,11 +20,11 @@ physical slot number, where line card is located in modular systems.
 
 Signed-off-by: Vadim Pasternak <vadimp@nvidia.com>
 ---
- drivers/net/ethernet/mellanox/mlxsw/minimal.c | 301 +++++++++++++++---
- 1 file changed, 248 insertions(+), 53 deletions(-)
+ drivers/net/ethernet/mellanox/mlxsw/minimal.c | 293 +++++++++++++++---
+ 1 file changed, 242 insertions(+), 51 deletions(-)
 
 diff --git a/drivers/net/ethernet/mellanox/mlxsw/minimal.c b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
-index 30925f573..d4336c7df 100644
+index 30925f573..59c5053dc 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/minimal.c
 @@ -24,22 +24,40 @@ static const struct mlxsw_fw_rev mlxsw_m_fw_rev = {
@@ -202,7 +202,7 @@ index 30925f573..d4336c7df 100644
  err_dev_addr_get:
  	free_netdev(dev);
  err_alloc_etherdev:
-@@ -267,72 +311,134 @@ mlxsw_m_port_create(struct mlxsw_m *mlxsw_m, u8 local_port, u8 module)
+@@ -267,72 +311,130 @@ mlxsw_m_port_create(struct mlxsw_m *mlxsw_m, u8 local_port, u8 module)
  	return err;
  }
  
@@ -213,28 +213,22 @@ index 30925f573..d4336c7df 100644
 -	struct mlxsw_m_port *mlxsw_m_port = mlxsw_m->ports[local_port];
 +	struct mlxsw_m_port_mapping *port_mapping;
 +	struct mlxsw_m_port *mlxsw_m_port;
-+	u8 module_offset;
-+
+ 
 +	port_mapping = mlxsw_m_port_mapping_get(mlxsw_m, slot_index,
 +						local_port);
 +	mlxsw_m_port = port_mapping->port;
-+	module_offset = mlxsw_m_port->module_offset;
- 
--	mlxsw_core_port_clear(mlxsw_m->core, local_port, mlxsw_m);
-+	mlxsw_core_port_clear(mlxsw_m->core, local_port + module_offset,
-+			      mlxsw_m);
+ 	mlxsw_core_port_clear(mlxsw_m->core, local_port, mlxsw_m);
  	unregister_netdev(mlxsw_m_port->dev); /* This calls ndo_stop */
 -	mlxsw_m->ports[local_port] = NULL;
 +	port_mapping->port = NULL;
  	free_netdev(mlxsw_m_port->dev);
--	mlxsw_core_port_fini(mlxsw_m->core, local_port);
-+	mlxsw_core_port_fini(mlxsw_m->core, local_port + module_offset);
+ 	mlxsw_core_port_fini(mlxsw_m->core, local_port);
  }
  
 -static int mlxsw_m_ports_create(struct mlxsw_m *mlxsw_m)
 +static int mlxsw_m_port_module_map(struct mlxsw_m *mlxsw_m, u8 slot_index,
 +				   u16 local_port, u8 module)
- {
++{
 +	struct mlxsw_m_port_mapping *port_mapping;
 +
 +	port_mapping = mlxsw_m_port_mapping_get(mlxsw_m, slot_index,
@@ -252,7 +246,7 @@ index 30925f573..d4336c7df 100644
 +static void
 +mlxsw_m_port_module_unmap(struct mlxsw_m *mlxsw_m, u8 slot_index,
 +			  struct mlxsw_m_port_mapping *port_mapping)
-+{
+ {
 +	port_mapping->module_to_port = -1;
 +	mlxsw_env_module_port_unmap(mlxsw_m->core, slot_index,
 +				    port_mapping->module);
@@ -371,7 +365,7 @@ index 30925f573..d4336c7df 100644
  }
  
  static int mlxsw_m_fw_rev_validate(struct mlxsw_m *mlxsw_m)
-@@ -353,6 +459,78 @@ static int mlxsw_m_fw_rev_validate(struct mlxsw_m *mlxsw_m)
+@@ -353,6 +455,78 @@ static int mlxsw_m_fw_rev_validate(struct mlxsw_m *mlxsw_m)
  	return -EINVAL;
  }
  
@@ -450,7 +444,7 @@ index 30925f573..d4336c7df 100644
  static int mlxsw_m_init(struct mlxsw_core *mlxsw_core,
  			const struct mlxsw_bus_info *mlxsw_bus_info,
  			struct netlink_ext_ack *extack)
-@@ -367,26 +545,43 @@ static int mlxsw_m_init(struct mlxsw_core *mlxsw_core,
+@@ -367,26 +541,43 @@ static int mlxsw_m_init(struct mlxsw_core *mlxsw_core,
  	if (err)
  		return err;
  
