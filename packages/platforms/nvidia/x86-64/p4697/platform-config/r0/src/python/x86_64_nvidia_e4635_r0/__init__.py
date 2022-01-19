@@ -1,10 +1,10 @@
 from onl.platform.base import *
 from onl.platform.nvidia import *
 
-class OnlPlatform_x86_64_nvidia_e4697_r0(OnlPlatformNvidia,
+class OnlPlatform_x86_64_nvidia_p4697_r0(OnlPlatformNvidia,
                                            OnlPlatformPortConfig_72x400):
-    PLATFORM='x86-64-nvidia-e4697-r0'
-    MODEL="E4697"
+    PLATFORM='x86-64-nvidia-p4697-r0'
+    MODEL="P4697"
     SYS_OBJECT_ID=".4697.1"
 
     def baseconfig(self):

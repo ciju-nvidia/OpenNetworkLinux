@@ -72,7 +72,7 @@ onlp_sysi_platform_set(const char* platform)
         nvidia_platform = get_platform_info();
         mc_get_platform_info(nvidia_platform);
         return ONLP_STATUS_OK;
-    } else if(!strcmp(platform, "x86-64-nvidia-e4697-r0")) {
+    } else if(!strcmp(platform, "x86-64-nvidia-p4697-r0")) {
         __ONL_PLATFORM_NAME = "x86-64-nvidia_e4697-r0";
         nvidia_platform = get_platform_info();
         mc_get_platform_info(nvidia_platform);
