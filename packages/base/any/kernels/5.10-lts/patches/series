@@ -154,4 +154,10 @@
 0154-mlxsw-core-Export-line-card-API.patch
 0155-mlxsw-minimal-Add-system-event-handler.patch
 0156-mlxsw-minimal-Add-interfaces-for-line-card-initializ.patch
+0157-mlx-platform-Add-support-for-systems-equipped-with-t.patch
+0158-platform-mellanox-Introduce-support-for-COMe-NVSwitc.patch
+0159-platform-x86-mlx-platform-Add-support-for-new-system.patch
+0160-platform-mellanox-Introduce-support-for-NDR-InfiniBa.patch
+0161-platform-mellanox-Introduce-support-for-NVLink4-mana.patch
+0162-hwmon-jc42-Add-support-for-Seiko-Instruments-S-34TS0.patch
 
