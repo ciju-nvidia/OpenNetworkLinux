@@ -1,0 +1,1 @@
+!include $ONL_TEMPLATES/onlp-platform-any.yml PLATFORM=x86_64-nvidia_hgx_h100-r0 ARCH=amd64 TOOLCHAIN=x86_64-linux-gnu
