@@ -1,9 +1,9 @@
 ###############################################################################
 #
-# 
+#
 #
 ###############################################################################
-
-LIBRARY := x86_64_nvidia_e3597
-$(LIBRARY)_SUBDIR := $(dir $(lastword $(MAKEFILE_LIST)))
-include $(BUILDER)/lib.mk
+include $(ONL)/make/config.mk
+MODULE := x86_64_nvidia_p2317
+AUTOMODULE := x86_64_nvidia_p2317
+include $(BUILDER)/definemodule.mk

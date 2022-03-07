@@ -1,9 +1,9 @@
 ###############################################################################
 #
-#
+# Local source generation targets.
 #
 ###############################################################################
-include $(ONL)/make/config.mk
-MODULE := x86_64_nvidia_e3597
-AUTOMODULE := x86_64_nvidia_e3597
-include $(BUILDER)/definemodule.mk
+
+ucli:
+	@../../../../tools/uclihandlers.py x86_64_nvidia_p2317_ucli.c
+

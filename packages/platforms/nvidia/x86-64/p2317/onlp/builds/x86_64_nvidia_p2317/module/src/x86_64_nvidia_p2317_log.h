@@ -3,10 +3,10 @@
  * 
  *
  *****************************************************************************/
-#ifndef __X86_64_NVIDIA_E3597_LOG_H__
-#define __X86_64_NVIDIA_E3597_LOG_H__
+#ifndef __X86_64_NVIDIA_P2317_LOG_H__
+#define __X86_64_NVIDIA_P2317_LOG_H__
 
-#define AIM_LOG_MODULE_NAME x86_64_nvidia_e3597
+#define AIM_LOG_MODULE_NAME x86_64_nvidia_p2317
 #include <AIM/aim_log.h>
 
-#endif /* __X86_64_NVIDIA_E3597_LOG_H__ */
+#endif /* __X86_64_NVIDIA_P2317_LOG_H__ */

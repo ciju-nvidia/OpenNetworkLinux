@@ -1,9 +1,9 @@
 ###############################################################################
 #
-# Local source generation targets.
+# 
 #
 ###############################################################################
 
-ucli:
-	@../../../../tools/uclihandlers.py x86_64_nvidia_e3597_ucli.c
-
+LIBRARY := x86_64_nvidia_p2317
+$(LIBRARY)_SUBDIR := $(dir $(lastword $(MAKEFILE_LIST)))
+include $(BUILDER)/lib.mk

@@ -25,7 +25,7 @@
 #ifndef __PLATFORM_LIB_H__
 #define __PLATFORM_LIB_H__
 
-#include "x86_64_nvidia_e3597_log.h"
+#include "x86_64_nvidia_p2317_log.h"
 
 #define CHASSIS_PSU_COUNT           2
 #define CPLD_COUNT                  3

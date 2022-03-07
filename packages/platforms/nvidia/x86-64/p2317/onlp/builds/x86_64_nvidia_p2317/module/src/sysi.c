@@ -33,17 +33,16 @@
 #include <onlp/platformi/sysi.h>
 #include <onlp/platformi/thermali.h>
 #include "platform_lib.h"
-#include "x86_64_nvidia_e3597_int.h"
-#include "x86_64_nvidia_e3597_log.h"
+#include "x86_64_nvidia_p2317_int.h"
+#include "x86_64_nvidia_p2317_log.h"
 #include <nvidia_common/nvidia_common.h>
 
-#define ONL_PLATFORM_NAME  "x86-64-nvidia-e3597-r0"
 static const char* __ONL_PLATFORM_NAME = NULL;
 
 int mc_get_platform_info(nvidia_platform_info_t* nvidia_platform)
 {
 	if (!__ONL_PLATFORM_NAME) {
-		aim_strlcpy(nvidia_platform->onl_platform_name, "x86-64-nvidia-e3597-all", PLATFORM_NAME_MAX_LEN);
+		aim_strlcpy(nvidia_platform->onl_platform_name, "x86-64-nvidia-p2317-all", PLATFORM_NAME_MAX_LEN);
 	}
 	else {
 		aim_strlcpy(nvidia_platform->onl_platform_name, __ONL_PLATFORM_NAME, PLATFORM_NAME_MAX_LEN);
@@ -67,8 +66,8 @@ onlp_sysi_platform_set(const char* platform)
 {
 	nvidia_platform_info_t* nvidia_platform;
 
-    if(!strcmp(platform, "x86-64-nvidia-e3597-r0")) {
-        __ONL_PLATFORM_NAME = "x86-64-nvidia_e3597-r0";
+    if(!strcmp(platform, "x86-64-nvidia-p2317-r0")) {
+        __ONL_PLATFORM_NAME = "x86-64-nvidia_p2317-r0";
         nvidia_platform = get_platform_info();
         mc_get_platform_info(nvidia_platform);
         return ONLP_STATUS_OK;
@@ -82,8 +81,8 @@ onlp_sysi_platform_set(const char* platform)
         nvidia_platform = get_platform_info();
         mc_get_platform_info(nvidia_platform);
         return ONLP_STATUS_OK;
-    } else if(!strcmp(platform, "x86-64-nvidia-e3597-all")) {
-        __ONL_PLATFORM_NAME = "x86-64-nvidia_e3597-all";
+    } else if(!strcmp(platform, "x86-64-nvidia-p2317-all")) {
+        __ONL_PLATFORM_NAME = "x86-64-nvidia_p2317-all";
         return ONLP_STATUS_OK;
     }
 

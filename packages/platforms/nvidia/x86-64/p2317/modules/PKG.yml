@@ -1,1 +1,1 @@
-!include $ONL_TEMPLATES/no-platform-modules.yml ARCH=amd64 VENDOR=nvidia BASENAME=x86_64-nvidia_hgx_h100-r0
+!include $ONL_TEMPLATES/no-platform-modules.yml ARCH=amd64 VENDOR=nvidia BASENAME=x86-64-nvidia-hgx-h100

@@ -3,7 +3,7 @@
  *
  *
  *****************************************************************************/
-#include <x86_64_nvidia_e3597/x86_64_nvidia_e3597_config.h>
+#include <x86_64_nvidia_p2317/x86_64_nvidia_p2317_config.h>
 
 /* <--auto.start.enum(ALL).source> */
 /* <auto.end.enum(ALL).source> */
