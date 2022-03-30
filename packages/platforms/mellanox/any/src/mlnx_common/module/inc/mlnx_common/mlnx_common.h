@@ -47,6 +47,9 @@
 #define LED_FAN7 8
 #define LED_PSU_T3 9
 
+/*leakage led id*/
+#define LED_LEAKAGE 10
+
 #define PERCENTAGE_MIN 60.0
 #define PERCENTAGE_MAX 100.0
 #define RPM_MAGIC_MIN  153.0
