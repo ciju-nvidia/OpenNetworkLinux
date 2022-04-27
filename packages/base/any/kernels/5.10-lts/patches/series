@@ -163,4 +163,4 @@
 0163-platform-mellanox-Introduce-support-for-NVLink4-mana.patch
 0164-hwmon-jc42-Add-support-for-Seiko-Instruments-S-34TS0.patch
 0165-platform-mellanox-mlxreg-io-Add-locking-for-io-opera.patch
-
+0166-leds-mlxreg-Send-udev-change-event.patch
