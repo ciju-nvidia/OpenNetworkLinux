@@ -89,7 +89,12 @@ onlp_sysi_platform_set(const char* platform)
         mlnx_platform = get_platform_info();
         mc_get_platform_info(mlnx_platform);
         return ONLP_STATUS_OK;
-    } else if(!strcmp(platform, "x86-64-mlnx-msn3700-all")) {
+    } else if(!strcmp(platform, "x86-64-nvidia-sn3750sx-r0")) {
+        __ONL_PLATFORM_NAME = "x86-64-nvidia_sn3750sx-r0";
+        mlnx_platform = get_platform_info();
+        mc_get_platform_info(mlnx_platform);
+        return ONLP_STATUS_OK;
+	} else if(!strcmp(platform, "x86-64-mlnx-msn3700-all")) {
         __ONL_PLATFORM_NAME = "x86-64-mlnx-msn3700-all";
         return ONLP_STATUS_OK;
     }
